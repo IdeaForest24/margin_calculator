@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eBay 판매 마진 계산기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            background-color: #f9fafb;
+            color: #374151;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+            background-color: white;
+            min-height: 100vh;
+        }
+        
+        .header {
+            margin-bottom: 32px;
+        }
+        
+        .header h1 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 30px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 16px;
+        }
+        
+        .header p {
+            color: #6b7280;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 32px;
+        }
+        
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .section {
+            padding: 24px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .section.blue { background-color: #eff6ff; border-color: #dbeafe; }
+        .section.orange { background-color: #fff7ed; border-color: #fed7aa; }
+        .section.green { background-color: #f0fdf4; border-color: #bbf7d0; }
+        .section.red { background-color: #fef2f2; border-color: #fecaca; }
+        .section.yellow { background-color: #fffbeb; border-color: #fde68a; }
+        .section.gray { background-color: #f9fafb; border-color: #e5e7eb; }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .section-header.blue { color: #1d4ed8; }
+        .section-header.orange { color: #ea580c; }
+        .section-header.green { color: #16a34a; }
+        .section-header.red { color: #dc2626; }
+        .section-header.yellow { color: #d97706; }
+        .section-header.gray { color: #374151; }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group.full {
+            grid-column: span 2;
+        }
+        
+        @media (max-width: 768px) {
+            .form-group.full {
+                grid-column: span 1;
+            }
+        }
+        
+        label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+        
+        input, select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .help-text {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        
+        .dimension-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .info-box {
+            font-size: 14px;
+            color: #1d4ed8;
+            background-color: #eff6ff;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 16px;
+        }
+        
+        .calculate-btn {
+            width: 100%;
+            background: linear-gradient(to right, #2563eb, #16a34a);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .calculate-btn:hover {
+            background: linear-gradient(to right, #1d4ed8, #15803d);
+            transform: translateY(-1px);
+        }
+        
+        .results-section {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 14px;
+        }
+        
+        .result-item.header {
+            font-weight: 600;
+            font-size: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .result-item.total {
+            font-weight: 600;
+            font-size: 18px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+        
+        .result-item.sub {
+            font-size: 12px;
+            color: #6b7280;
+            margin-left: 16px;
+        }
+        
+        .text-red { color: #dc2626; }
+        .text-green { color: #16a34a; }
+        .text-blue { color: #2563eb; }
+        .text-gray { color: #6b7280; }
+        
+        .hidden { display: none; }
+        
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        li {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .icon {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                📈 eBay 판매 마진 계산기
+            </h1>
+            <p>eBay 글로벌 판매를 위한 종합 원가 및 마진 계산 도구입니다. 제품 원가부터 최종 판매가까지 모든 비용을 계산합니다.</p>
+        </div>
+
+        <div class="main-grid">
+            <!-- 입력 폼 -->
+            <div class="input-section">
+                <!-- 제품 원가 정보 -->
+                <div class="section blue">
+                    <div class="section-header blue">
+                        📦 제품 원가 정보
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="productCost">제품 원가 (원) *</label>
+                            <input type="number" id="productCost" placeholder="예: 50000">
+                        </div>
+                        <div class="form-group">
+                            <label for="supplierShipping">매입처 배송비 (원)</label>
+                            <input type="number" id="supplierShipping" placeholder="예: 3000">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 상품 정보 및 배송 -->
+                <div class="section orange">
+                    <div class="section-header orange">
+                        🚚 상품 정보 및 배송
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="weight">실제 중량 (kg) *</label>
+                            <input type="number" step="0.1" id="weight" placeholder="예: 0.8">
+                        </div>
+                        <div class="form-group">
+                            <label for="egsShipping">eGS 창고 입고비 (원)</label>
+                            <input type="number" id="egsShipping" value="3400" placeholder="3400">
+                            <div class="help-text">GS25 반값택배 최저요금: 3,400원</div>
+                        </div>
+                    </div>
+                    <div class="dimension-grid" style="margin-top: 16px;">
+                        <div class="form-group">
+                            <label for="length">가로 (cm)</label>
+                            <input type="number" id="length" placeholder="30">
+                        </div>
+                        <div class="form-group">
+                            <label for="width">세로 (cm)</label>
+                            <input type="number" id="width" placeholder="20">
+                        </div>
+                        <div class="form-group">
+                            <label for="height">높이 (cm)</label>
+                            <input type="number" id="height" placeholder="20">
+                        </div>
+                    </div>
+                    <div id="weightInfo" class="info-box hidden"></div>
+                </div>
+
+                <!-- eBay 판매 정보 -->
+                <div class="section green">
+                    <div class="section-header green">
+                        🌍 eBay 판매 정보
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="destination">목적지 *</label>
+                            <select id="destination">
+                                <option value="">목적지를 선택하세요</option>
+                                <option value="US">미국 (US)</option>
+                                <option value="CA">캐나다 (CA)</option>
+                                <option value="GB">영국 (GB)</option>
+                                <option value="DE">독일 (DE)</option>
+                                <option value="AU">호주 (AU)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="category">eBay 카테고리 *</label>
+                            <select id="category">
+                                <option value="">카테고리를 선택하세요</option>
+                                <option value="most_categories">대부분 카테고리 (일반)</option>
+                                <option value="books_movies_music">도서/영화/음악</option>
+                                <option value="womens_bags">여성용 가방/핸드백</option>
+                                <option value="athletic_shoes">운동화 (남성/여성)</option>
+                                <option value="jewelry_watches">보석/시계 (일반)</option>
+                                <option value="watches_parts">시계/부품/액세서리</option>
+                                <option value="coins_paper_money">동전/지폐 (금괴제외)</option>
+                                <option value="bullion">금괴/귀금속</option>
+                                <option value="guitars_basses">악기 (기타/베이스)</option>
+                                <option value="trading_cards">트레이딩 카드</option>
+                                <option value="nft_categories">NFT 카테고리</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-grid" style="margin-top: 16px;">
+                        <div class="form-group">
+                            <label for="storeType">eBay 스토어 구독</label>
+                            <select id="storeType">
+                                <option value="none">스토어 없음/Starter</option>
+                                <option value="basic">Basic 이상 스토어</option>
+                            </select>
+                            <div class="help-text">스토어 구독 시 수수료 할인</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="isKoreanSeller">한국 판매자 여부</label>
+                            <select id="isKoreanSeller">
+                                <option value="true">한국 판매자 (VAT 10% 적용)</option>
+                                <option value="false">해외 판매자</option>
+                            </select>
+                            <div class="help-text">한국 판매자는 VAT 10% 추가</div>
+                        </div>
+                    </div>
+                    <div class="form-group full" style="margin-top: 16px;">
+                        <label for="targetMargin">목표 마진율 (%)</label>
+                        <input type="number" step="1" id="targetMargin" value="30" placeholder="30">
+                    </div>
+                </div>
+
+                <button class="calculate-btn" onclick="calculateMargin()">
+                    🧮 마진 계산하기
+                </button>
+            </div>
+
+            <!-- 결과 -->
+            <div class="results-section">
+                <div id="resultsContainer" class="hidden">
+                    <!-- 비용 구조 -->
+                    <div class="section red">
+                        <div class="section-header red">
+                            💰 비용 구조 (원화)
+                        </div>
+                        <div id="costBreakdown"></div>
+                    </div>
+
+                    <!-- 판매 정보 -->
+                    <div class="section green">
+                        <div class="section-header green">
+                            📈 판매 정보 (USD)
+                        </div>
+                        <div id="salesInfo"></div>
+                    </div>
+
+                    <!-- 설정 정보 -->
+                    <div class="section blue">
+                        <div class="section-header blue">
+                            ⚙️ 판매 설정 정보
+                        </div>
+                        <div id="settingsInfo"></div>
+                    </div>
+                </div>
+
+                <!-- 주의사항 -->
+                <div class="section yellow">
+                    <div class="section-header yellow">
+                        ⚠️ 주의사항
+                    </div>
+                    <ul>
+                        <li>• 환율은 실시간으로 변동됩니다 (현재 1달러=1,300원 가정)</li>
+                        <li>• eBay 수수료는 2025년 2월 14일 이후 최신 요금표 기준입니다</li>
+                        <li>• 거래당 수수료: $10 이하 주문 $0.30, $10 초과 주문 $0.40</li>
+                        <li>• 한국 판매자는 eBay 수수료에 VAT 10% 추가 적용됩니다</li>
+                        <li>• 스토어 구독 시 수수료 할인이 적용됩니다</li>
+                        <li>• 환전 수수료는 별도 계산 (페이오니아 정산 시 약 3%)</li>
+                        <li>• 부피 중량과 실제 중량 중 큰 값으로 과금됩니다</li>
+                        <li>• eGS 창고 입고비는 GS25 반값택배 기준입니다</li>
+                        <li>• 실제 판매 시 최신 요금표를 반드시 확인하세요</li>
+                    </ul>
+                </div>
+
+                <!-- 수식 설명 -->
+                <div class="section gray">
+                    <div class="section-header gray">
+                        📊 계산 공식
+                    </div>
+                    <div style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+                        <div style="margin-bottom: 8px;"><strong>총 원가:</strong> 제품원가 + 매입처배송비 + eGS창고입고비 + eGS해외배송비</div>
+                        <div style="margin-bottom: 8px;"><strong>eBay 수수료:</strong> 카테고리별 차등 적용 (2025.2.14 이후 기준)</div>
+                        <div style="margin-left: 16px; font-size: 12px; margin-bottom: 8px;">
+                            - 스토어 없음: 대부분 13.6% + 거래당 수수료<br>
+                            - Basic 이상: 대부분 12.7% + 거래당 수수료<br>
+                            - 복잡한 threshold 구조도 자동 계산
+                        </div>
+                        <div style="margin-bottom: 8px;"><strong>VAT:</strong> 한국 판매자는 eBay 수수료 × 10%</div>
+                        <div style="margin-bottom: 8px;"><strong>거래당 수수료:</strong> $10 이하 $0.30, $10 초과 $0.40</div>
+                        <div style="margin-bottom: 8px;"><strong>권장 판매가:</strong> 복잡한 역계산으로 정확한 목표 마진 달성</div>
+                        <div style="margin-bottom: 8px;"><strong>순수익:</strong> 판매가 - 총 원가 - eBay 수수료 - VAT</div>
+                        <div><strong>환전 수수료:</strong> 별도 관리 (페이오니아 정산 시 약 3%)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // eBay 카테고리별 수수료율
+        const ebayCategories = {
+            'most_categories': { 
+                name: '대부분 카테고리 (일반)', 
+                noStore: { rate: 13.6, threshold: 7500, overRate: 2.35 },
+                withStore: { rate: 12.7, threshold: 2500, overRate: 2.35 }
+            },
+            'books_movies_music': { 
+                name: '도서/영화/음악', 
+                noStore: { rate: 15.3, threshold: 7500, overRate: 2.35 },
+                withStore: { rate: 15.3, threshold: 2500, overRate: 2.35 }
+            },
+            'womens_bags': { 
+                name: '여성용 가방/핸드백', 
+                noStore: { rate: 15.0, threshold: 2000, overRate: 9.0 },
+                withStore: { rate: 13.0, threshold: 2000, overRate: 7.0 }
+            },
+            'athletic_shoes': { 
+                name: '운동화 (남성/여성)', 
+                noStore: { rate: 8.0, minAmount: 150, belowMinRate: 13.6 },
+                withStore: { rate: 7.0, minAmount: 150, belowMinRate: 12.7 }
+            },
+            'jewelry_watches': { 
+                name: '보석/시계 (일반)', 
+                noStore: { rate: 15.0, threshold: 5000, overRate: 9.0 },
+                withStore: { rate: 13.0, threshold: 5000, overRate: 7.0 }
+            },
+            'watches_parts': { 
+                name: '시계/부품/액세서리', 
+                noStore: { rate: 15.0, threshold1: 1000, rate1: 6.5, threshold2: 7500, rate2: 3.0 },
+                withStore: { rate: 12.5, threshold1: 1000, rate1: 4.0, threshold2: 5000, rate2: 3.0 }
+            },
+            'coins_paper_money': { 
+                name: '동전/지폐 (금괴제외)', 
+                noStore: { rate: 13.25, threshold: 7500, overRate: 2.35 },
+                withStore: { rate: 9.0, threshold: 4000, overRate: 2.35 }
+            },
+            'bullion': { 
+                name: '금괴/귀금속', 
+                noStore: { rate: 13.6, threshold: 7500, overRate: 7.0 },
+                withStore: { rate: 7.5, threshold1: 1500, rate1: 5.0, threshold2: 10000, rate2: 4.5 }
+            },
+            'guitars_basses': { 
+                name: '악기 (기타/베이스)', 
+                noStore: { rate: 6.7, threshold: 7500, overRate: 2.35 },
+                withStore: { rate: 6.7, threshold: 2500, overRate: 2.35 }
+            },
+            'trading_cards': { 
+                name: '트레이딩 카드', 
+                noStore: { rate: 13.25, threshold: 7500, overRate: 2.35 },
+                withStore: { rate: 12.35, threshold: 2500, overRate: 2.35 }
+            },
+            'nft_categories': { 
+                name: 'NFT 카테고리', 
+                noStore: { rate: 5.0 },
+                withStore: { rate: 5.0 }
+            }
+        };
+
+        // eGS 해외배송 요금표
+        const egsRates = {
+            US: [
+                { weight: 0.1, price: 7100 }, { weight: 0.2, price: 8300 }, { weight: 0.3, price: 10100 },
+                { weight: 0.4, price: 11900 }, { weight: 0.5, price: 13800 }, { weight: 0.6, price: 15300 },
+                { weight: 0.7, price: 16300 }, { weight: 0.8, price: 17200 }, { weight: 0.9, price: 17800 },
+                { weight: 1.0, price: 20400 }, { weight: 1.5, price: 25800 }, { weight: 1.6, price: 26400 },
+                { weight: 1.7, price: 27000 }, { weight: 1.8, price: 27600 }, { weight: 1.9, price: 28600 },
+                { weight: 2.0, price: 29700 }, { weight: 2.5, price: 36200 }, { weight: 3.0, price: 42700 }
+            ],
+            CA: [
+                { weight: 0.1, price: 7200 }, { weight: 0.2, price: 8300 }, { weight: 0.3, price: 10000 },
+                { weight: 0.4, price: 11300 }, { weight: 0.5, price: 12600 }, { weight: 0.6, price: 14400 },
+                { weight: 0.7, price: 15400 }, { weight: 0.8, price: 16500 }, { weight: 0.9, price: 17600 },
+                { weight: 1.0, price: 18600 }, { weight: 1.5, price: 24800 }, { weight: 1.6, price: 27800 },
+                { weight: 1.7, price: 28800 }, { weight: 1.8, price: 29900 }, { weight: 1.9, price: 31000 },
+                { weight: 2.0, price: 32000 }, { weight: 2.5, price: 37300 }, { weight: 3.0, price: 42600 }
+            ],
+            GB: [
+                { weight: 0.1, price: 5700 }, { weight: 0.2, price: 7000 }, { weight: 0.3, price: 8200 },
+                { weight: 0.4, price: 9400 }, { weight: 0.5, price: 10600 }, { weight: 0.6, price: 11900 },
+                { weight: 0.7, price: 13100 }, { weight: 0.8, price: 14300 }, { weight: 0.9, price: 15500 },
+                { weight: 1.0, price: 16700 }, { weight: 1.5, price: 22900 }, { weight: 1.6, price: 24100 },
+                { weight: 1.7, price: 25300 }, { weight: 1.8, price: 26500 }, { weight: 1.9, price: 27700 },
+                { weight: 2.0, price: 29000 }, { weight: 2.5, price: 35100 }, { weight: 3.0, price: 41200 }
+            ],
+            DE: [
+                { weight: 0.1, price: 6900 }, { weight: 0.2, price: 7800 }, { weight: 0.3, price: 8700 },
+                { weight: 0.4, price: 9600 }, { weight: 0.5, price: 10500 }, { weight: 0.6, price: 11600 },
+                { weight: 0.7, price: 12500 }, { weight: 0.8, price: 13400 }, { weight: 0.9, price: 14300 },
+                { weight: 1.0, price: 15200 }, { weight: 1.5, price: 19400 }, { weight: 1.6, price: 20300 },
+                { weight: 1.7, price: 21100 }, { weight: 2.0, price: 23700 }, { weight: 2.5, price: 28100 },
+                { weight: 3.0, price: 32500 }
+            ],
+            AU: [
+                { weight: 0.2, price: 8100 }, { weight: 0.5, price: 11200 }, { weight: 1.0, price: 16600 },
+                { weight: 1.5, price: 21800 }, { weight: 2.0, price: 26100 }
+            ]
+        };
+
+        const destinations = {
+            US: '미국', CA: '캐나다', GB: '영국', DE: '독일', AU: '호주'
+        };
+
+        // 부피 중량 계산
+        function calculateVolumetricWeight() {
+            const length = parseFloat(document.getElementById('length').value) || 0;
+            const width = parseFloat(document.getElementById('width').value) || 0;
+            const height = parseFloat(document.getElementById('height').value) || 0;
+            
+            if (length && width && height) {
+                return (length * width * height) / 6000;
+            }
+            return 0;
+        }
+
+        // 최종 과금 중량 계산
+        function getFinalWeight() {
+            const actualWeight = parseFloat(document.getElementById('weight').value) || 0;
+            const volumetricWeight = calculateVolumetricWeight();
+            return Math.max(actualWeight, volumetricWeight);
+        }
+
+        // eGS 해외배송비 계산
+        function calculateEgsShipping(targetWeight, destination) {
+            const rates = egsRates[destination];
+            if (!rates) return 0;
+
+            const exactMatch = rates.find(rate => rate.weight === targetWeight);
+            if (exactMatch) return exactMatch.price;
+
+            const nextHigher = rates.find(rate => rate.weight > targetWeight);
+            if (nextHigher) return nextHigher.price;
+
+            const lastRate = rates[rates.length - 1];
+            if (targetWeight > lastRate.weight) {
+                const previousRate = rates[rates.length - 2] || lastRate;
+                const weightDiff = targetWeight - lastRate.weight;
+                const pricePerKg = (lastRate.price - previousRate.price) / (lastRate.weight - previousRate.weight);
+                return Math.round(lastRate.price + (weightDiff * pricePerKg));
+            }
+
+            return 0;
+        }
+
+        // 치수 입력 시 부피 중량 정보 업데이트
+        function updateWeightInfo() {
+            const volumetricWeight = calculateVolumetricWeight();
+            const finalWeight = getFinalWeight();
+            const weightInfo = document.getElementById('weightInfo');
+            
+            if (volumetricWeight > 0) {
+                weightInfo.innerHTML = `부피 중량: ${volumetricWeight.toFixed(2)}kg | 과금 중량: ${finalWeight.toFixed(2)}kg`;
+                weightInfo.classList.remove('hidden');
+            } else {
+                weightInfo.classList.add('hidden');
+            }
+        }
+
+        // 이벤트 리스너 추가
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('length').addEventListener('input', updateWeightInfo);
+            document.getElementById('width').addEventListener('input', updateWeightInfo);
+            document.getElementById('height').addEventListener('input', updateWeightInfo);
+            document.getElementById('weight').addEventListener('input', updateWeightInfo);
+        });
+
+        // 마진 계산
+        function calculateMargin() {
+            const productCost = document.getElementById('productCost').value;
+            const supplierShipping = document.getElementById('supplierShipping').value || 0;
+            const weight = document.getElementById('weight').value;
+            const destination = document.getElementById('destination').value;
+            const category = document.getElementById('category').value;
+            const egsShipping = document.getElementById('egsShipping').value || 3400;
+            const targetMargin = document.getElementById('targetMargin').value;
+            const storeType = document.getElementById('storeType').value;
+            const isKoreanSeller = document.getElementById('isKoreanSeller').value === 'true';
+
+            if (!productCost || !destination || !category || !weight) {
+                alert('모든 필수 항목을 입력해주세요.');
+                return;
+            }
+
+            const finalWeight = getFinalWeight();
+            const egsShippingCost = calculateEgsShipping(finalWeight, destination);
+            
+            // 총 원가 계산 (원화)
+            const totalCostKRW = 
+                parseFloat(productCost) + 
+                parseFloat(supplierShipping) + 
+                parseFloat(egsShipping) + 
+                egsShippingCost;
+
+            // USD 환율
+            const exchangeRate = 1300;
+            const totalCostUSD = totalCostKRW / exchangeRate;
+
+            // 스토어 구독 여부에 따른 수수료율 선택
+            const categoryData = ebayCategories[category];
+            const hasStore = storeType !== 'none';
+            const feeStructure = hasStore ? categoryData.withStore : categoryData.noStore;
+            
+            // 거래당 수수료
+            let transactionFee = 0.40;
+            
+            // 복잡한 eBay 수수료 계산
+            let requiredSellingPriceUSD;
+            let ebayFeeUSD;
+            
+            // 반복 계산으로 정확한 판매가 도출
+            const marginRate = parseFloat(targetMargin) / 100;
+            let estimatedPrice = (totalCostUSD + 0.40) / (1 - marginRate - (feeStructure.rate / 100));
+            
+            for (let i = 0; i < 10; i++) {
+                transactionFee = estimatedPrice <= 10 ? 0.30 : 0.40;
+                
+                if (feeStructure.threshold) {
+                    // 일반적인 threshold 방식
+                    const baseRate = feeStructure.rate / 100;
+                    const overRate = feeStructure.overRate / 100;
+                    const threshold = feeStructure.threshold;
+                    
+                    if (estimatedPrice <= threshold) {
+                        ebayFeeUSD = (estimatedPrice * baseRate) + transactionFee;
+                        estimatedPrice = (totalCostUSD + transactionFee) / (1 - marginRate - baseRate);
+                    } else {
+                        const baseFee = threshold * baseRate;
+                        const overFee = (estimatedPrice - threshold) * overRate;
+                        ebayFeeUSD = baseFee + overFee + transactionFee;
+                        estimatedPrice = (totalCostUSD + baseFee + transactionFee + (overRate * threshold)) / (1 - marginRate - overRate);
+                    }
+                } else {
+                    // 단순한 수수료
+                    const rate = feeStructure.rate / 100;
+                    ebayFeeUSD = (estimatedPrice * rate) + transactionFee;
+                    estimatedPrice = (totalCostUSD + transactionFee) / (1 - marginRate - rate);
+                }
+            }
+            
+            requiredSellingPriceUSD = estimatedPrice;
+            
+            // VAT 계산 (한국 판매자만)
+            const vatUSD = isKoreanSeller ? ebayFeeUSD * 0.1 : 0;
+            const totalFeesUSD = ebayFeeUSD + vatUSD;
+            
+            // 실제 수익 계산
+            const netProfitUSD = requiredSellingPriceUSD - totalCostUSD - totalFeesUSD;
+            const netProfitKRW = netProfitUSD * exchangeRate;
+            
+            // 실제 마진율
+            const actualMarginRate = (netProfitUSD / requiredSellingPriceUSD) * 100;
+
+            // 결과 표시
+            displayResults({
+                productCost: parseFloat(productCost),
+                supplierShipping: parseFloat(supplierShipping),
+                egsShipping: parseFloat(egsShipping),
+                egsInternationalShipping: egsShippingCost,
+                totalCostKRW: totalCostKRW,
+                totalCostUSD: totalCostUSD,
+                requiredSellingPriceUSD: requiredSellingPriceUSD,
+                ebayFeeUSD: ebayFeeUSD,
+                vatUSD: vatUSD,
+                totalFeesUSD: totalFeesUSD,
+                netProfitUSD: netProfitUSD,
+                netProfitKRW: netProfitKRW,
+                actualMarginRate: actualMarginRate,
+                finalWeight: finalWeight,
+                volumetricWeight: calculateVolumetricWeight(),
+                exchangeRate: exchangeRate,
+                feeStructure: feeStructure,
+                transactionFee: transactionFee,
+                hasStore: hasStore,
+                isKoreanSeller: isKoreanSeller,
+                destination: destination,
+                category: category
+            });
+        }
+
+        function displayResults(results) {
+            // 비용 구조
+            document.getElementById('costBreakdown').innerHTML = `
+                <div class="result-item">
+                    <span>제품 원가:</span>
+                    <span>${results.productCost.toLocaleString()}원</span>
+                </div>
+                <div class="result-item">
+                    <span>매입처 배송비:</span>
+                    <span>${results.supplierShipping.toLocaleString()}원</span>
+                </div>
+                <div class="result-item">
+                    <span>eGS 창고 입고비:</span>
+                    <span>${results.egsShipping.toLocaleString()}원</span>
+                </div>
+                <div class="result-item">
+                    <span>eGS 해외배송비:</span>
+                    <span>${results.egsInternationalShipping.toLocaleString()}원</span>
+                </div>
+                <div class="result-item total text-red">
+                    <span>총 원가:</span>
+                    <span>${results.totalCostKRW.toLocaleString()}원</span>
+                </div>
+            `;
+
+            // 판매 정보
+            document.getElementById('salesInfo').innerHTML = `
+                <div class="result-item">
+                    <span>환율:</span>
+                    <span>1 USD = ${results.exchangeRate.toLocaleString()}원</span>
+                </div>
+                <div class="result-item">
+                    <span>총 원가:</span>
+                    <span>$${results.totalCostUSD.toFixed(2)}</span>
+                </div>
+                <div class="result-item">
+                    <span>eBay 수수료:</span>
+                    <span>$${results.ebayFeeUSD.toFixed(2)}</span>
+                </div>
+                <div class="result-item sub">
+                    <span>- 퍼센트 수수료:</span>
+                    <span>$${(results.ebayFeeUSD - results.transactionFee).toFixed(2)}</span>
+                </div>
+                <div class="result-item sub">
+                    <span>- 거래당 수수료:</span>
+                    <span>$${results.transactionFee.toFixed(2)}</span>
+                </div>
+                ${results.isKoreanSeller ? `
+                <div class="result-item">
+                    <span>VAT (10%):</span>
+                    <span>$${results.vatUSD.toFixed(2)}</span>
+                </div>
+                ` : ''}
+                <div class="result-item text-red">
+                    <span>총 수수료:</span>
+                    <span>$${results.totalFeesUSD.toFixed(2)}</span>
+                </div>
+                <div class="result-item total text-blue">
+                    <span>권장 판매가:</span>
+                    <span>$${results.requiredSellingPriceUSD.toFixed(2)}</span>
+                </div>
+                <div class="result-item text-green">
+                    <span>순수익:</span>
+                    <span>$${results.netProfitUSD.toFixed(2)}</span>
+                </div>
+                <div class="result-item">
+                    <span>순수익 (원화):</span>
+                    <span class="text-green">${results.netProfitKRW.toLocaleString()}원</span>
+                </div>
+                <div class="result-item text-green">
+                    <span>실제 마진율:</span>
+                    <span>${results.actualMarginRate.toFixed(1)}%</span>
+                </div>
+            `;
+
+            // 설정 정보
+            document.getElementById('settingsInfo').innerHTML = `
+                <div style="font-size: 14px; line-height: 1.6;">
+                    <div>목적지: ${destinations[results.destination]}</div>
+                    <div>과금 중량: ${results.finalWeight}kg</div>
+                    <div>카테고리: ${ebayCategories[results.category].name}</div>
+                    <div>스토어 구독: ${results.hasStore ? 'Basic 이상' : '없음/Starter'}</div>
+                    <div>판매자 유형: ${results.isKoreanSeller ? '한국 판매자 (VAT 10%)' : '해외 판매자'}</div>
+                    <div style="font-size: 12px; margin-top: 8px; padding: 8px; background-color: #eff6ff; border-radius: 4px;">
+                        💡 수수료율: ${results.feeStructure.rate}%
+                        ${results.feeStructure.threshold ? ` (${results.feeStructure.threshold.toLocaleString()}까지)` : ''}
+                        ${results.isKoreanSeller ? ' + VAT 10%' : ''}
+                    </div>
+                </div>
+            `;
+
+            // 결과 컨테이너 표시
+            document.getElementById('resultsContainer').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
