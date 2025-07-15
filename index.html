@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eBay 판매 마진 계산기 v2.1</title>
+    <title>eBay 판매 마진 계산기 v1.0</title>
     <style>
         * {
             margin: 0;
@@ -53,73 +53,20 @@
             color: #6b7280;
         }
         
-        .excel-upload-section {
-            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
-            border: 2px dashed #0ea5e9;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-        
-        .excel-upload-section.dragover {
-            border-color: #0284c7;
-            background: linear-gradient(135deg, #e0f2fe, #bae6fd);
-            transform: scale(1.02);
-        }
-        
-        .upload-area {
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
+        .top-bar {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 24px;
             align-items: center;
-            gap: 16px;
-        }
-        
-        .upload-icon {
-            font-size: 48px;
-            color: #0ea5e9;
-        }
-        
-        .upload-text {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1e40af;
-        }
-        
-        .upload-subtext {
-            font-size: 14px;
-            color: #64748b;
-        }
-        
-        .file-input {
-            display: none;
-        }
-        
-        .upload-status {
             margin-top: 16px;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 500;
+            margin-bottom: 24px;
         }
         
-        .upload-status.success {
-            background: #dcfce7;
-            color: #16a34a;
-            border: 1px solid #bbf7d0;
-        }
-        
-        .upload-status.error {
-            background: #fef2f2;
-            color: #dc2626;
-            border: 1px solid #fecaca;
-        }
-        
-        .upload-status.info {
-            background: #eff6ff;
-            color: #2563eb;
-            border: 1px solid #dbeafe;
+        @media (max-width: 768px) {
+            .top-bar {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
         }
         
         .exchange-rate-info {
@@ -127,7 +74,6 @@
             border: 1px solid #3b82f6;
             border-radius: 8px;
             padding: 12px;
-            margin-top: 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -150,6 +96,70 @@
         
         .refresh-btn:hover {
             background: #2563eb;
+        }
+        
+        .excel-upload-compact {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border: 2px dashed #0ea5e9;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            transition: all 0.3s ease;
+            min-width: 280px;
+            cursor: pointer;
+        }
+        
+        .excel-upload-compact:hover {
+            border-color: #0284c7;
+            background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+            transform: scale(1.02);
+        }
+        
+        .excel-upload-compact .upload-icon {
+            font-size: 24px;
+            color: #0ea5e9;
+            margin-bottom: 8px;
+        }
+        
+        .excel-upload-compact .upload-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 4px;
+        }
+        
+        .excel-upload-compact .upload-subtext {
+            font-size: 12px;
+            color: #64748b;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .upload-status {
+            margin-bottom: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        
+        .upload-status.success {
+            background: #dcfce7;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+        
+        .upload-status.error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        
+        .upload-status.info {
+            background: #eff6ff;
+            color: #2563eb;
+            border: 1px solid #dbeafe;
         }
         
         .main-grid {
@@ -398,33 +408,31 @@
     <div class="container">
         <div class="header">
             <h1>
-                📈 eBay 판매 마진 계산기 <span class="version-badge">v2.1</span>
+                📈 eBay 판매 마진 계산기 <span class="version-badge">v1.0</span>
             </h1>
-            <p>엑셀 운임표 업로드 + 실시간 환율 연동 + 정확한 마진율 계산</p>
             
-            <div class="exchange-rate-info">
-                <div>
-                    <span>💱 실시간 환율: </span>
-                    <span class="rate" id="exchangeRateDisplay">1 USD = 로딩중...</span>
-                    <span id="lastUpdated" class="text-gray"></span>
+            <!-- 상단 바: 환율 정보 + 엑셀 업로드 -->
+            <div class="top-bar">
+                <div class="exchange-rate-info">
+                    <div>
+                        <span>💱 실시간 환율: </span>
+                        <span class="rate" id="exchangeRateDisplay">1 USD = 로딩중...</span>
+                        <span id="lastUpdated" class="text-gray"></span>
+                    </div>
+                    <button class="refresh-btn" onclick="fetchExchangeRate()">
+                        <span id="refreshIcon">🔄</span> 갱신
+                    </button>
                 </div>
-                <button class="refresh-btn" onclick="fetchExchangeRate()">
-                    <span id="refreshIcon">🔄</span> 갱신
-                </button>
-            </div>
-        </div>
-
-        <!-- 엑셀 파일 업로드 섹션 -->
-        <div class="excel-upload-section" id="uploadSection">
-            <div class="upload-area" onclick="document.getElementById('excelFile').click()">
-                <div class="upload-icon">📋</div>
-                <div class="upload-text">eGS 운임표 엑셀 파일 업로드</div>
-                <div class="upload-subtext">
-                    클릭하거나 파일을 드래그하여 업로드하세요<br>
-                    (.xlsx, .xls 파일 지원)
+                
+                <div class="excel-upload-compact" id="uploadSection" onclick="document.getElementById('excelFile').click()">
+                    <div class="upload-icon">📋</div>
+                    <div class="upload-text">eGS 운임표 업로드</div>
+                    <div class="upload-subtext">엑셀 파일 (.xlsx, .xls)</div>
+                    <input type="file" id="excelFile" class="file-input" accept=".xlsx,.xls" onchange="handleFileUpload(event)">
                 </div>
             </div>
-            <input type="file" id="excelFile" class="file-input" accept=".xlsx,.xls" onchange="handleFileUpload(event)">
+            
+            <!-- 업로드 상태 표시 -->
             <div id="uploadStatus" class="upload-status hidden"></div>
         </div>
 
@@ -438,12 +446,12 @@
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="productCost">제품 원가 (원) *</label>
-                            <input type="number" id="productCost" placeholder="예: 50000">
+                            <label for="productCost">제품 원가 (원)</label>
+                            <input type="number" id="productCost" placeholder="">
                         </div>
                         <div class="form-group">
                             <label for="supplierShipping">매입처 배송비 (원)</label>
-                            <input type="number" id="supplierShipping" placeholder="예: 3000">
+                            <input type="number" id="supplierShipping" placeholder="">
                         </div>
                     </div>
                 </div>
@@ -466,27 +474,27 @@
                     
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="weight">실제 중량 (kg) *</label>
-                            <input type="number" step="0.1" id="weight" placeholder="예: 0.8">
+                            <label for="weight">실제 중량 (kg)</label>
+                            <input type="number" step="0.1" id="weight" placeholder="예시 : 0.5, 2">
                         </div>
                         <div class="form-group">
                             <label for="egsShipping">eGS 창고 입고비 (원)</label>
-                            <input type="number" id="egsShipping" value="3400" placeholder="3400">
+                            <input type="number" id="egsShipping" value="" placeholder="예시 : 3000, 3400">
                             <div class="help-text">GS25 반값택배 최저요금: 3,400원</div>
                         </div>
                     </div>
                     <div class="dimension-grid" style="margin-top: 16px;">
                         <div class="form-group">
                             <label for="length">가로 (cm)</label>
-                            <input type="number" id="length" placeholder="30">
+                            <input type="number" id="length" placeholder="">
                         </div>
                         <div class="form-group">
                             <label for="width">세로 (cm)</label>
-                            <input type="number" id="width" placeholder="20">
+                            <input type="number" id="width" placeholder="">
                         </div>
                         <div class="form-group">
                             <label for="height">높이 (cm)</label>
-                            <input type="number" id="height" placeholder="20">
+                            <input type="number" id="height" placeholder="">
                         </div>
                     </div>
                     <div id="weightInfo" class="info-box hidden"></div>
@@ -551,7 +559,7 @@
                     </div>
                     <div class="form-group full" style="margin-top: 16px;">
                         <label for="targetMargin">목표 마진율 (%)</label>
-                        <input type="number" step="1" id="targetMargin" value="30" placeholder="30">
+                        <input type="number" step="1" id="targetMargin" value="" placeholder="예시 : 20">
                     </div>
                 </div>
 
@@ -588,43 +596,18 @@
                     </div>
                 </div>
 
-                <!-- 주의사항 -->
-                <div class="section yellow">
-                    <div class="section-header yellow">
-                        ⚠️ 주의사항 및 새로운 기능
+                <!-- 사용 방법 -->
+                <div class="section blue">
+                    <div class="section-header blue">
+                        📖 사용 방법
                     </div>
                     <ul>
-                        <li>• 🆕 <strong>실제 eGS 운임표:</strong> 2025년 7월 최신 운임표 엑셀 파일 업로드 방식</li>
-                        <li>• 🆕 <strong>자동 데이터 저장:</strong> 업로드한 운임표는 브라우저에 저장되어 재사용</li>
-                        <li>• 🆕 <strong>정확한 파싱:</strong> Standard/Express 모든 시트를 정확히 인식</li>
-                        <li>• 🆕 <strong>실시간 환율 연동:</strong> 무료 API를 통한 실시간 USD/KRW 환율</li>
-                        <li>• 🆕 <strong>정확한 마진율 계산:</strong> 이분탐색 알고리즘으로 정확한 목표 마진율 달성</li>
-                        <li>• 🇪🇺 <strong>유럽 국가별 요금:</strong> Standard는 각 국가별 개별 요금, Express는 전체 유럽 공통 요금</li>
-                        <li>• 🇩🇪 <strong>기타 유럽(EU):</strong> 리스트에 없는 유럽 국가들만 독일 요금 적용</li>
-                        <li>• 📋 <strong>필수 업로드:</strong> 운임표 없으면 계산 불가 - 반드시 eGS 운임표 업로드 필요</li>
-                        <li>• ✅ <strong>검증 완료:</strong> 실제 eGS 2025년 7월 운임표로 테스트 완료</li>
-                        <li>• eBay 수수료는 2025년 2월 14일 이후 최신 요금표 기준입니다</li>
-                        <li>• 거래당 수수료: $10 이하 주문 $0.30, $10 초과 주문 $0.40</li>
-                        <li>• 한국 판매자는 eBay 수수료에 VAT 10% 추가 적용됩니다</li>
-                        <li>• 부피 중량과 실제 중량 중 큰 값으로 과금됩니다</li>
+                        <li>• <strong>1단계:</strong> eGS 운임표 엑셀 파일을 업로드하세요 (드래그&드롭 또는 클릭)</li>
+                        <li>• <strong>2단계:</strong> 제품 정보(원가, 중량, 치수)를 입력하세요</li>
+                        <li>• <strong>3단계:</strong> 배송 목적지와 eBay 카테고리를 선택하세요</li>
+                        <li>• <strong>4단계:</strong> 목표 마진율을 설정하고 계산하기를 클릭하세요</li>
+                        <li>• 💡 <strong>팁:</strong> 한 번 업로드한 운임표는 브라우저에 저장되어 다음에도 자동으로 사용됩니다</li>
                     </ul>
-                </div>
-
-                <!-- 수식 설명 -->
-                <div class="section gray">
-                    <div class="section-header gray">
-                        📊 v2.1 새로운 기능
-                    </div>
-                    <div style="font-size: 14px; color: #6b7280; line-height: 1.6;">
-                        <div style="margin-bottom: 8px;"><strong>✅ 실제 eGS 파일 파싱:</strong> 2025년 7월 최신 운임표 완벽 지원</div>
-                        <div style="margin-bottom: 8px;"><strong>🗂️ 시트별 정확한 파싱:</strong> US/CA/GB/AU/EU 각각 다른 구조 인식</div>
-                        <div style="margin-bottom: 8px;"><strong>🇪🇺 유럽 국가별 파싱:</strong> Standard는 각국 개별 요금, Express는 M Zone 공통</div>
-                        <div style="margin-bottom: 8px;"><strong>💾 브라우저 저장:</strong> 한 번 업로드하면 다음에도 자동 사용</div>
-                        <div style="margin-bottom: 8px;"><strong>💱 실시간 환율:</strong> 매 계산마다 최신 USD/KRW 환율 적용</div>
-                        <div style="margin-bottom: 8px;"><strong>🎯 마진율 계산 개선:</strong> 이분탐색으로 정확한 목표 마진율 달성</div>
-                        <div style="margin-bottom: 8px;"><strong>목표 마진율 = (순수익 ÷ 판매가) × 100</strong></div>
-                        <div>환전 수수료는 별도 관리 (페이오니아 정산 시 약 3%)</div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -733,17 +716,23 @@
             
             uploadSection.addEventListener('dragover', function(e) {
                 e.preventDefault();
-                uploadSection.classList.add('dragover');
+                uploadSection.style.borderColor = '#0284c7';
+                uploadSection.style.background = 'linear-gradient(135deg, #e0f2fe, #bae6fd)';
+                uploadSection.style.transform = 'scale(1.02)';
             });
             
             uploadSection.addEventListener('dragleave', function(e) {
                 e.preventDefault();
-                uploadSection.classList.remove('dragover');
+                uploadSection.style.borderColor = '#0ea5e9';
+                uploadSection.style.background = 'linear-gradient(135deg, #f0f9ff, #e0f2fe)';
+                uploadSection.style.transform = 'scale(1)';
             });
             
             uploadSection.addEventListener('drop', function(e) {
                 e.preventDefault();
-                uploadSection.classList.remove('dragover');
+                uploadSection.style.borderColor = '#0ea5e9';
+                uploadSection.style.background = 'linear-gradient(135deg, #f0f9ff, #e0f2fe)';
+                uploadSection.style.transform = 'scale(1)';
                 
                 const files = e.dataTransfer.files;
                 if (files.length > 0) {
