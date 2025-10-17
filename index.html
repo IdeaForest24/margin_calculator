@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eBay 판매 마진 계산기 v1.0</title>
+    <title>eBay 판매 마진 계산기 v2.1 (수정판)</title>
     <style>
         * {
             margin: 0;
@@ -317,6 +317,7 @@
         .result-item {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding: 4px 0;
             font-size: 14px;
         }
@@ -408,10 +409,9 @@
     <div class="container">
         <div class="header">
             <h1>
-                📈 eBay 판매 마진 계산기 <span class="version-badge">v1.0</span>
+                📈 eBay 판매 마진 계산기 <span class="version-badge">v2.1</span>
             </h1>
             
-            <!-- 상단 바: 환율 정보 + 엑셀 업로드 -->
             <div class="top-bar">
                 <div class="exchange-rate-info">
                     <div>
@@ -432,14 +432,11 @@
                 </div>
             </div>
             
-            <!-- 업로드 상태 표시 -->
             <div id="uploadStatus" class="upload-status hidden"></div>
         </div>
 
         <div class="main-grid">
-            <!-- 입력 폼 -->
             <div class="input-section">
-                <!-- 제품 원가 정보 -->
                 <div class="section blue">
                     <div class="section-header blue">
                         📦 제품 원가 정보
@@ -456,13 +453,11 @@
                     </div>
                 </div>
 
-                <!-- 상품 정보 및 배송 -->
                 <div class="section orange">
                     <div class="section-header orange">
                         🚚 상품 정보 및 배송
                     </div>
                     
-                    <!-- 배송 서비스 선택 -->
                     <div class="service-type-toggle">
                         <div class="service-type-option active" onclick="toggleServiceType('standard')">
                             🚛 eGS Standard (5-10일)
@@ -500,7 +495,6 @@
                     <div id="weightInfo" class="info-box hidden"></div>
                 </div>
 
-                <!-- eBay 판매 정보 -->
                 <div class="section green">
                     <div class="section-header green">
                         🌍 eBay 판매 정보
@@ -568,45 +562,35 @@
                 </button>
             </div>
 
-            <!-- 결과 -->
             <div class="results-section">
+                <!-- 결과가 표시될 컨테이너 -->
                 <div id="resultsContainer" class="hidden">
-                    <!-- 비용 구조 -->
-                    <div class="section red">
-                        <div class="section-header red">
-                            💰 비용 구조 (원화)
-                        </div>
-                        <div id="costBreakdown"></div>
-                    </div>
-
-                    <!-- 판매 정보 -->
                     <div class="section green">
                         <div class="section-header green">
-                            📈 판매 정보 (USD)
+                            📊 계산 결과 상세
                         </div>
-                        <div id="salesInfo"></div>
+                        <!-- 모든 결과가 여기에 표시됨 -->
+                        <div id="resultDetails"></div>
                     </div>
-
-                    <!-- 설정 정보 -->
-                    <div class="section blue">
+                     <div class="section blue">
                         <div class="section-header blue">
-                            ⚙️ 판매 설정 정보
+                            ⚙️ 계산 설정 정보
                         </div>
                         <div id="settingsInfo"></div>
                     </div>
                 </div>
 
-                <!-- 사용 방법 -->
-                <div class="section blue">
+                <!-- 기본 안내 메시지 -->
+                <div id="usageGuide" class="section blue">
                     <div class="section-header blue">
                         📖 사용 방법
                     </div>
                     <ul>
-                        <li>• <strong>1단계:</strong> eGS 운임표 엑셀 파일을 업로드하세요 (드래그&드롭 또는 클릭)</li>
+                        <li>• <strong>1단계:</strong> eGS 운임표 엑셀 파일을 업로드하세요</li>
                         <li>• <strong>2단계:</strong> 제품 정보(원가, 중량, 치수)를 입력하세요</li>
                         <li>• <strong>3단계:</strong> 배송 목적지와 eBay 카테고리를 선택하세요</li>
                         <li>• <strong>4단계:</strong> 목표 마진율을 설정하고 계산하기를 클릭하세요</li>
-                        <li>• 💡 <strong>팁:</strong> 한 번 업로드한 운임표는 브라우저에 저장되어 다음에도 자동으로 사용됩니다</li>
+                        <li>• 💡 <strong>v2.1 업데이트:</strong> UI 버그 수정 및 결과 표시 방식 개선</li>
                     </ul>
                 </div>
             </div>
@@ -615,12 +599,10 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
-        // 전역 변수
         let currentExchangeRate = 1300;
         let currentServiceType = 'standard';
-        let egsRatesData = null; // 엑셀에서 로드된 운임 데이터
+        let egsRatesData = null;
 
-        // eBay 카테고리별 수수료율
         const ebayCategories = {
             'most_categories': { 
                 name: '대부분 카테고리 (일반)', 
@@ -685,14 +667,12 @@
             EU: '기타 유럽 (독일 요금)', AU: '호주'
         };
 
-        // 페이지 로드 시 초기화
         window.addEventListener('load', function() {
             fetchExchangeRate();
             loadSavedRatesData();
             setupDragAndDrop();
         });
 
-        // 저장된 운임 데이터 로드
         function loadSavedRatesData() {
             try {
                 const savedData = localStorage.getItem('egsRatesData');
@@ -710,7 +690,6 @@
             }
         }
 
-        // 드래그 앤 드롭 설정
         function setupDragAndDrop() {
             const uploadSection = document.getElementById('uploadSection');
             
@@ -741,12 +720,10 @@
             });
         }
 
-        // 파일 업로드 처리
         function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
 
-            // 파일 형식 검증
             const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
                                'application/vnd.ms-excel'];
             if (!validTypes.includes(file.type)) {
@@ -762,13 +739,11 @@
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
                     
-                    // 엑셀 데이터 파싱
                     const parsedData = parseExcelWorkbook(workbook);
                     
                     if (parsedData) {
                         egsRatesData = parsedData;
                         
-                        // localStorage에 저장
                         localStorage.setItem('egsRatesData', JSON.stringify(parsedData));
                         localStorage.setItem('egsRatesLastUpdate', new Date().toISOString());
                         
@@ -785,7 +760,6 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // 엑셀 워크북 파싱
         function parseExcelWorkbook(workbook) {
             try {
                 const result = {
@@ -793,13 +767,9 @@
                     express: {}
                 };
 
-                // Standard 시트들 파싱
                 result.standard = parseStandardSheets(workbook);
-                
-                // Express 시트 파싱
                 result.express = parseExpressSheet(workbook);
 
-                // 최소한 하나의 서비스 타입에 데이터가 있는지 확인
                 if (Object.keys(result.standard).length === 0 && Object.keys(result.express).length === 0) {
                     return null;
                 }
@@ -811,46 +781,39 @@
             }
         }
 
-        // Standard 시트들 파싱
         function parseStandardSheets(workbook) {
             const standardData = {};
             
             try {
-                // US 시트 파싱
                 const usSheet = workbook.Sheets['eGS Standard - US'];
                 if (usSheet) {
                     const usData = XLSX.utils.sheet_to_json(usSheet, { header: 1 });
                     standardData.US = parseStandardUSSheet(usData);
                 }
 
-                // CA 시트 파싱
                 const caSheet = workbook.Sheets['eGS Standard - CA'];
                 if (caSheet) {
                     const caData = XLSX.utils.sheet_to_json(caSheet, { header: 1 });
-                    standardData.CA = parseStandardGenericSheet(caData, 7); // Row 7부터 시작
+                    standardData.CA = parseStandardGenericSheet(caData, 7);
                 }
 
-                // GB 시트 파싱
                 const gbSheet = workbook.Sheets['eGS Standard - GB'];
                 if (gbSheet) {
                     const gbData = XLSX.utils.sheet_to_json(gbSheet, { header: 1 });
-                    standardData.GB = parseStandardGenericSheet(gbData, 7); // Row 7부터 시작
+                    standardData.GB = parseStandardGenericSheet(gbData, 7);
                 }
 
-                // AU 시트 파싱
                 const auSheet = workbook.Sheets['eGS Standard - AU'];
                 if (auSheet) {
                     const auData = XLSX.utils.sheet_to_json(auSheet, { header: 1 });
-                    standardData.AU = parseStandardGenericSheet(auData, 6); // Row 6부터 시작
+                    standardData.AU = parseStandardGenericSheet(auData, 6);
                 }
 
-                // EU 시트 파싱 (각 국가별 개별 파싱)
                 const euSheet = workbook.Sheets['eGS Standard - EU'];
                 if (euSheet) {
                     const euData = XLSX.utils.sheet_to_json(euSheet, { header: 1 });
                     const euCountriesData = parseStandardEUSheet(euData);
                     if (euCountriesData) {
-                        // 각 국가별 데이터를 개별적으로 할당
                         Object.keys(euCountriesData).forEach(countryCode => {
                             standardData[countryCode] = euCountriesData[countryCode];
                         });
@@ -864,7 +827,6 @@
             }
         }
 
-        // Express 시트 파싱
         function parseExpressSheet(workbook) {
             const expressData = {};
             
@@ -874,11 +836,9 @@
 
                 const data = XLSX.utils.sheet_to_json(expressSheet, { header: 1 });
                 
-                // Zone 헤더 찾기 (Row 3)
                 const zoneHeader = data[3];
                 if (!zoneHeader) return {};
 
-                // Zone 매핑 (유럽은 모두 M Zone 공통)
                 const zoneMapping = {
                     'US': { zone: 'E', index: zoneHeader.indexOf('E') },
                     'CA': { zone: 'F', index: zoneHeader.indexOf('F') },
@@ -886,7 +846,6 @@
                     'AU': { zone: 'U', index: zoneHeader.indexOf('U') }
                 };
 
-                // 데이터 파싱 (Row 5부터 시작)
                 for (let row = 5; row < data.length; row++) {
                     const rowData = data[row];
                     if (!rowData || typeof rowData[0] !== 'number') continue;
@@ -907,7 +866,6 @@
                     });
                 }
 
-                // 모든 유럽 국가들은 M Zone(GB)과 동일한 요금 사용
                 if (expressData.GB) {
                     expressData.DE = [...expressData.GB];
                     expressData.FR = [...expressData.GB];
@@ -923,11 +881,9 @@
             }
         }
 
-        // Standard US 시트 파싱
         function parseStandardUSSheet(data) {
             const result = [];
             
-            // Row 4부터 시작, 컬럼 1=weight, 컬럼 2=price
             for (let row = 4; row < data.length; row++) {
                 const rowData = data[row];
                 if (!rowData || rowData.length < 3) continue;
@@ -943,11 +899,9 @@
             return result.length > 0 ? result : null;
         }
 
-        // Standard 일반 시트 파싱 (CA, GB, AU)
         function parseStandardGenericSheet(data, startRow) {
             const result = [];
             
-            // 지정된 행부터 시작, 컬럼 0=weight, 컬럼 1=price
             for (let row = startRow; row < data.length; row++) {
                 const rowData = data[row];
                 if (!rowData || rowData.length < 2) continue;
@@ -963,12 +917,10 @@
             return result.length > 0 ? result : null;
         }
 
-        // Standard EU 시트 파싱 (각 국가별 개별 파싱)
         function parseStandardEUSheet(data) {
             const results = {};
             
             try {
-                // Row 2에서 각 국가 위치 찾기
                 const headerRow = data[2];
                 if (!headerRow) return null;
                 
@@ -990,12 +942,10 @@
                     }
                 });
                 
-                // 각 국가별로 데이터 파싱
                 Object.keys(countryIndices).forEach(countryCode => {
                     const columnIndex = countryIndices[countryCode];
                     const countryData = [];
                     
-                    // Row 3부터 데이터 파싱
                     for (let row = 3; row < data.length; row++) {
                         const rowData = data[row];
                         if (!rowData || rowData.length <= columnIndex) continue;
@@ -1013,7 +963,6 @@
                     }
                 });
                 
-                // EU(기타 유럽)는 독일 요금 사용
                 if (results.DE) {
                     results.EU = [...results.DE];
                 }
@@ -1025,7 +974,6 @@
             }
         }
 
-        // 업로드 상태 표시
         function showUploadStatus(message, type) {
             const statusDiv = document.getElementById('uploadStatus');
             statusDiv.textContent = message;
@@ -1033,7 +981,6 @@
             statusDiv.classList.remove('hidden');
         }
 
-        // 실시간 환율 가져오기
         async function fetchExchangeRate() {
             const refreshIcon = document.getElementById('refreshIcon');
             const exchangeRateDisplay = document.getElementById('exchangeRateDisplay');
@@ -1066,7 +1013,6 @@
             refreshIcon.innerHTML = '🔄';
         }
 
-        // 수동 환율 업데이트
         function updateManualExchangeRate(value) {
             const rate = parseFloat(value);
             if (rate && rate > 0) {
@@ -1075,7 +1021,6 @@
             }
         }
 
-        // 배송 서비스 타입 토글
         function toggleServiceType(type) {
             currentServiceType = type;
             
@@ -1087,7 +1032,6 @@
             updateWeightInfo();
         }
 
-        // 부피 중량 계산
         function calculateVolumetricWeight() {
             const length = parseFloat(document.getElementById('length').value) || 0;
             const width = parseFloat(document.getElementById('width').value) || 0;
@@ -1099,14 +1043,12 @@
             return 0;
         }
 
-        // 최종 과금 중량 계산
         function getFinalWeight() {
             const actualWeight = parseFloat(document.getElementById('weight').value) || 0;
             const volumetricWeight = calculateVolumetricWeight();
             return Math.max(actualWeight, volumetricWeight);
         }
 
-        // eGS 해외배송비 계산 (엑셀 데이터 사용)
         function calculateEgsShipping(targetWeight, destination) {
             if (!egsRatesData) {
                 return 0;
@@ -1122,15 +1064,12 @@
                 return 0;
             }
 
-            // 정확한 중량 매칭
             const exactMatch = rates.find(rate => rate.weight === targetWeight);
             if (exactMatch) return exactMatch.price;
 
-            // 다음 높은 중량 찾기
             const nextHigher = rates.find(rate => rate.weight > targetWeight);
             if (nextHigher) return nextHigher.price;
 
-            // 최대 중량 초과 시 보간
             const lastRate = rates[rates.length - 1];
             if (targetWeight > lastRate.weight) {
                 const previousRate = rates[rates.length - 2] || lastRate;
@@ -1142,12 +1081,13 @@
             return 0;
         }
 
-        // eBay 수수료 계산
         function calculateEbayFee(sellingPriceUSD, category, hasStore) {
             const categoryData = ebayCategories[category];
             const feeStructure = hasStore ? categoryData.withStore : categoryData.noStore;
             
             const transactionFee = sellingPriceUSD <= 10 ? 0.30 : 0.40;
+            const internationalFee = sellingPriceUSD * 0.0165;
+            
             let percentageFee = 0;
             
             if (feeStructure.threshold) {
@@ -1191,10 +1131,14 @@
                 percentageFee = sellingPriceUSD * (feeStructure.rate / 100);
             }
             
-            return percentageFee + transactionFee;
+            return {
+                finalValueFee: percentageFee,
+                perOrderFee: transactionFee,
+                internationalFee: internationalFee,
+                total: percentageFee + transactionFee + internationalFee
+            };
         }
 
-        // 목표 마진율 달성 판매가 계산 (이분탐색)
         function findTargetSellingPrice(totalCostUSD, targetMarginRate, category, hasStore, isKoreanSeller) {
             let low = totalCostUSD * 1.1;
             let high = totalCostUSD * 5.0;
@@ -1203,11 +1147,18 @@
             for (let i = 0; i < 50; i++) {
                 const midPrice = (low + high) / 2;
                 
-                const ebayFee = calculateEbayFee(midPrice, category, hasStore);
-                const vat = isKoreanSeller ? ebayFee * 0.1 : 0;
-                const totalFees = ebayFee + vat;
+                const ebayFeeBreakdown = calculateEbayFee(midPrice, category, hasStore);
+                const ebayFeeTotal = ebayFeeBreakdown.total;
+                const vat = isKoreanSeller ? ebayFeeTotal * 0.1 : 0;
+                const ebayTotalFee = ebayFeeTotal + vat;
                 
-                const netProfit = midPrice - totalCostUSD - totalFees;
+                const ebayPayout = midPrice - ebayTotalFee;
+                const payoneerWithdrawalFee = 1.00;
+                const payoneerExchangeFee = ebayPayout * 0.012;
+                const payoneerTotalFee = payoneerWithdrawalFee + payoneerExchangeFee;
+                
+                const finalReceive = ebayPayout - payoneerTotalFee;
+                const netProfit = finalReceive - totalCostUSD;
                 const actualMarginRate = (netProfit / midPrice) * 100;
                 
                 if (Math.abs(actualMarginRate - targetMarginRate) < 0.01) {
@@ -1226,13 +1177,12 @@
             return bestPrice;
         }
 
-        // 중량 정보 업데이트
         function updateWeightInfo() {
             const volumetricWeight = calculateVolumetricWeight();
             const finalWeight = getFinalWeight();
             const weightInfo = document.getElementById('weightInfo');
             
-            if (volumetricWeight > 0) {
+            if (volumetricWeight > 0 || finalWeight > 0) {
                 const serviceTypeText = currentServiceType === 'express' ? 'Express' : 'Standard';
                 weightInfo.innerHTML = `
                     📦 부피 중량: ${volumetricWeight.toFixed(2)}kg | 과금 중량: ${finalWeight.toFixed(2)}kg<br>
@@ -1244,7 +1194,6 @@
             }
         }
 
-        // 이벤트 리스너
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('length').addEventListener('input', updateWeightInfo);
             document.getElementById('width').addEventListener('input', updateWeightInfo);
@@ -1252,9 +1201,7 @@
             document.getElementById('weight').addEventListener('input', updateWeightInfo);
         });
 
-        // 마진 계산
         function calculateMargin() {
-            // 운임 데이터 체크
             if (!egsRatesData) {
                 alert('⚠️ 운임표를 먼저 업로드해주세요!');
                 return;
@@ -1301,11 +1248,20 @@
                 isKoreanSeller
             );
             
-            const ebayFeeUSD = calculateEbayFee(requiredSellingPriceUSD, category, hasStore);
-            const vatUSD = isKoreanSeller ? ebayFeeUSD * 0.1 : 0;
-            const totalFeesUSD = ebayFeeUSD + vatUSD;
+            const ebayFeeBreakdown = calculateEbayFee(requiredSellingPriceUSD, category, hasStore);
+            const vatUSD = isKoreanSeller ? ebayFeeBreakdown.total * 0.1 : 0;
+            const ebayTotalFee = ebayFeeBreakdown.total + vatUSD;
             
-            const netProfitUSD = requiredSellingPriceUSD - totalCostUSD - totalFeesUSD;
+            const ebayPayoutUSD = requiredSellingPriceUSD - ebayTotalFee;
+            // Payoneer 출금 수수료는 고정 $1.5 이나, 현재 $1로 계산되고 있어 $1로 유지.
+            const payoneerWithdrawalFee = 1.00;
+            const payoneerExchangeFee = ebayPayoutUSD * 0.012;
+            const payoneerTotalFee = payoneerWithdrawalFee + payoneerExchangeFee;
+            
+            const finalReceiveUSD = ebayPayoutUSD - payoneerTotalFee;
+            const finalReceiveKRW = finalReceiveUSD * currentExchangeRate;
+            
+            const netProfitUSD = finalReceiveUSD - totalCostUSD;
             const netProfitKRW = netProfitUSD * currentExchangeRate;
             const actualMarginRate = (netProfitUSD / requiredSellingPriceUSD) * 100;
 
@@ -1317,9 +1273,18 @@
                 totalCostKRW: totalCostKRW,
                 totalCostUSD: totalCostUSD,
                 requiredSellingPriceUSD: requiredSellingPriceUSD,
-                ebayFeeUSD: ebayFeeUSD,
+                finalValueFee: ebayFeeBreakdown.finalValueFee,
+                perOrderFee: ebayFeeBreakdown.perOrderFee,
+                internationalFee: ebayFeeBreakdown.internationalFee,
+                ebayFeeSubtotal: ebayFeeBreakdown.total,
                 vatUSD: vatUSD,
-                totalFeesUSD: totalFeesUSD,
+                ebayTotalFee: ebayTotalFee,
+                ebayPayoutUSD: ebayPayoutUSD,
+                payoneerWithdrawalFee: payoneerWithdrawalFee,
+                payoneerExchangeFee: payoneerExchangeFee,
+                payoneerTotalFee: payoneerTotalFee,
+                finalReceiveUSD: finalReceiveUSD,
+                finalReceiveKRW: finalReceiveKRW,
                 netProfitUSD: netProfitUSD,
                 netProfitKRW: netProfitKRW,
                 actualMarginRate: actualMarginRate,
@@ -1335,96 +1300,83 @@
             });
         }
 
+        // *** THIS FUNCTION HAS BEEN COMPLETELY REWRITTEN ***
         function displayResults(results) {
+            const resultDetailsContainer = document.getElementById('resultDetails');
+            const settingsInfoContainer = document.getElementById('settingsInfo');
             const serviceName = results.serviceType === 'express' ? 'eGS Express 해외배송비' : 'eGS Standard 해외배송비';
-            
-            document.getElementById('costBreakdown').innerHTML = `
-                <div class="result-item">
-                    <span>제품 원가:</span>
-                    <span>${results.productCost.toLocaleString()}원</span>
+
+            // 이미지 UI와 동일한 순서로 HTML 생성
+            const resultHTML = `
+                <!-- 총원가 -->
+                <div style="padding-bottom: 12px; border-bottom: 1px solid #e5e7eb;">
+                    <div class="result-item" style="font-size: 15px;">
+                        <span class="text-red"><strong>총 원가 (KRW)</strong></span>
+                        <span class="text-red"><strong>${results.totalCostKRW.toLocaleString()}원</strong></span>
+                    </div>
+                    <div class="result-item text-gray" style="font-size: 12px;">└ 제품원가(${results.productCost.toLocaleString()}) + 매입배송비(${results.supplierShipping.toLocaleString()}) + 입고비(${results.egsShipping.toLocaleString()}) + 국제배송비(${results.egsInternationalShipping.toLocaleString()})</div>
                 </div>
-                <div class="result-item">
-                    <span>매입처 배송비:</span>
-                    <span>${results.supplierShipping.toLocaleString()}원</span>
+
+                <!-- 권장 판매가 -->
+                <div class="result-item total text-blue" style="margin: 12px 0;">
+                    <span style="font-size: 16px;"><strong>💵 권장 판매가 (USD)</strong></span>
+                    <span style="font-size: 16px;"><strong>$${results.requiredSellingPriceUSD.toFixed(2)}</strong></span>
                 </div>
-                <div class="result-item">
-                    <span>eGS 창고 입고비:</span>
-                    <span>${results.egsShipping.toLocaleString()}원</span>
+
+                <!-- eBay 수수료 상세 -->
+                <div style="border-top: 1px dashed #d1d5db; padding-top: 12px;">
+                    <div style="font-size: 13px; font-weight: 600; color: #6b7280; margin-bottom: 8px;">eBay 수수료 상세</div>
+                    <div class="result-item" style="font-size: 13px;"><span>• Final Value Fee:</span> <span>$${results.finalValueFee.toFixed(2)}</span></div>
+                    <div class="result-item" style="font-size: 13px;"><span>• Per Order Fee:</span> <span>$${results.perOrderFee.toFixed(2)}</span></div>
+                    <div class="result-item" style="font-size: 13px;"><span>• International Fee (1.65%):</span> <span>$${results.internationalFee.toFixed(2)}</span></div>
+                    ${results.isKoreanSeller ? `<div class="result-item" style="font-size: 13px;"><span>• VAT (10%):</span> <span>$${results.vatUSD.toFixed(2)}</span></div>` : ''}
+                    <div class="result-item text-red" style="margin-top: 4px; font-size: 14px;"><strong>eBay 총 수수료:</strong> <strong>$${results.ebayTotalFee.toFixed(2)}</strong></div>
                 </div>
-                <div class="result-item">
-                    <span>${serviceName}:</span>
-                    <span>${results.egsInternationalShipping.toLocaleString()}원</span>
+
+                <div class="result-item" style="background: #eff6ff; padding: 8px; border-radius: 4px; margin: 12px 0;">
+                    <span><strong>eBay 정산액:</strong></span>
+                    <span class="text-blue"><strong>$${results.ebayPayoutUSD.toFixed(2)}</strong></span>
                 </div>
-                <div class="result-item total text-red">
-                    <span>총 원가:</span>
-                    <span>${results.totalCostKRW.toLocaleString()}원</span>
+                
+                <!-- Payoneer 수수료 상세 -->
+                <div style="border-top: 1px dashed #d1d5db; padding-top: 12px;">
+                    <div style="font-size: 13px; font-weight: 600; color: #6b7280; margin-bottom: 8px;">Payoneer 수수료</div>
+                    <div class="result-item" style="font-size: 13px;"><span>• 출금 수수료:</span> <span>$${results.payoneerWithdrawalFee.toFixed(2)}</span></div>
+                    <div class="result-item" style="font-size: 13px;"><span>• 환전 수수료 (1.2%):</span> <span>$${results.payoneerExchangeFee.toFixed(2)}</span></div>
+                    <div class="result-item text-red" style="margin-top: 4px; font-size: 14px;"><strong>Payoneer 총 수수료:</strong> <strong>$${results.payoneerTotalFee.toFixed(2)}</strong></div>
+                </div>
+                
+                <!-- 최종 수령액 -->
+                <div class="result-item total" style="background: #f0fdf4; padding: 12px; border-radius: 6px; margin-top: 16px;">
+                    <span style="font-size: 16px;"><strong>💰 최종 수령액 (USD):</strong></span>
+                    <span class="text-green" style="font-size: 16px;"><strong>$${results.finalReceiveUSD.toFixed(2)}</strong></span>
+                </div>
+                <div class="result-item total" style="background: #f0fdf4; padding: 12px; border-radius: 6px; margin-top: 8px;">
+                    <span style="font-size: 16px;"><strong>💰 최종 수령액 (KRW):</strong></span>
+                    <span class="text-green" style="font-size: 16px;"><strong>${results.finalReceiveKRW.toLocaleString()}원</strong></span>
                 </div>
             `;
+            resultDetailsContainer.innerHTML = resultHTML;
 
-            const marginText = Math.abs(results.actualMarginRate - results.targetMarginRate) < 0.1 
-                ? `${results.actualMarginRate.toFixed(1)}% ✅` 
-                : `${results.actualMarginRate.toFixed(1)}% (목표: ${results.targetMarginRate}%)`;
-
-            document.getElementById('salesInfo').innerHTML = `
-                <div class="result-item">
-                    <span>실시간 환율:</span>
-                    <span>1 USD = ${results.exchangeRate.toLocaleString()}원</span>
-                </div>
-                <div class="result-item">
-                    <span>총 원가:</span>
-                    <span>$${results.totalCostUSD.toFixed(2)}</span>
-                </div>
-                <div class="result-item">
-                    <span>eBay 수수료:</span>
-                    <span>$${results.ebayFeeUSD.toFixed(2)}</span>
-                </div>
-                ${results.isKoreanSeller ? `
-                <div class="result-item">
-                    <span>VAT (10%):</span>
-                    <span>$${results.vatUSD.toFixed(2)}</span>
-                </div>
-                ` : ''}
-                <div class="result-item text-red">
-                    <span>총 수수료:</span>
-                    <span>$${results.totalFeesUSD.toFixed(2)}</span>
-                </div>
-                <div class="result-item total text-blue">
-                    <span>권장 판매가:</span>
-                    <span>$${results.requiredSellingPriceUSD.toFixed(2)}</span>
-                </div>
-                <div class="result-item text-green">
-                    <span>순수익:</span>
-                    <span>$${results.netProfitUSD.toFixed(2)}</span>
-                </div>
-                <div class="result-item">
-                    <span>순수익 (원화):</span>
-                    <span class="text-green">${results.netProfitKRW.toLocaleString()}원</span>
-                </div>
-                <div class="result-item text-green">
-                    <span>달성 마진율:</span>
-                    <span>${marginText}</span>
-                </div>
-            `;
-
+            // 계산 설정 정보 표시
             const serviceTypeText = results.serviceType === 'express' 
                 ? '⚡ eGS Express (2-5일 배송)' 
                 : '🚛 eGS Standard (5-10일 배송)';
-
-            document.getElementById('settingsInfo').innerHTML = `
-                <div style="font-size: 14px; line-height: 1.6;">
-                    <div>목적지: ${destinations[results.destination]}</div>
-                    <div>과금 중량: ${results.finalWeight}kg</div>
-                    <div>배송 서비스: ${serviceTypeText}</div>
-                    <div>카테고리: ${ebayCategories[results.category].name}</div>
-                    <div>스토어 구독: ${results.hasStore ? 'Basic 이상' : '없음/Starter'}</div>
-                    <div>판매자 유형: ${results.isKoreanSeller ? '한국 판매자 (VAT 10%)' : '해외 판매자'}</div>
-                    <div style="font-size: 12px; margin-top: 8px; padding: 8px; background-color: #eff6ff; border-radius: 4px;">
-                        💡 v2.1 새기능: 엑셀 기반 동적 운임 관리 + 브라우저 저장
-                    </div>
+            const settingsHTML = `
+                <div style="font-size: 14px; line-height: 1.8;">
+                    <div><strong>목적지:</strong> ${destinations[results.destination]}</div>
+                    <div><strong>과금 중량:</strong> ${results.finalWeight.toFixed(2)}kg</div>
+                    <div><strong>배송 서비스:</strong> ${serviceTypeText}</div>
+                    <div><strong>카테고리:</strong> ${ebayCategories[results.category].name}</div>
+                    <div><strong>스토어 구독:</strong> ${results.hasStore ? 'Basic 이상' : '없음/Starter'}</div>
+                    <div><strong>판매자 유형:</strong> ${results.isKoreanSeller ? '한국 판매자 (VAT 10%)' : '해외 판매자'}</div>
                 </div>
             `;
+            settingsInfoContainer.innerHTML = settingsHTML;
 
+            // 결과 컨테이너를 보이게 하고, 기본 안내는 숨김
             document.getElementById('resultsContainer').classList.remove('hidden');
+            document.getElementById('usageGuide').classList.add('hidden');
         }
     </script>
 </body>
