@@ -3,13 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eBay 판매 마진 계산기 v2.0</title>
+    <title>eBay 판매 마진 계산기 v2.2</title>
 
-    <!-- 
-        CSS 파일 연결 부분입니다.
-        index.html 파일과 같은 위치에 있는 'css' 폴더 안의 각 파일을 불러옵니다.
-        폴더 구조가 정확해야 이 링크가 작동합니다.
-    -->
+    <!-- CSS 파일 연결 -->
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/margin-calculator.css">
     <link rel="stylesheet" href="css/egs-rates.css">
@@ -28,9 +24,10 @@
             <button class="tab-link" onclick="openTab(event, 'egsRates')">eGS 운임표</button>
         </div>
 
-        <!-- 마진 계산기 탭 콘텐츠 -->
+        <!-- ================================== -->
+        <!--        마진 계산기 탭 콘텐츠         -->
+        <!-- ================================== -->
         <div id="marginCalculator" class="tab-content active">
-            <!-- 기존 마진 계산기 HTML 코드는 여기에 들어갑니다. (생략) -->
              <div class="top-bar">
                 <div class="exchange-rate-info">
                     <div>
@@ -46,12 +43,10 @@
                 <div class="data-management-section">
                     <div class="excel-upload-compact" id="uploadSection" onclick="document.getElementById('excelFile').click()">
                         <div class="upload-icon">📋</div>
-                        <div>
-                            <div class="upload-text">eGS 운임표 업로드</div>
-                        </div>
-                        <input type="file" id="excelFile" class="file-input" accept=".xlsx,.xls" onchange="handleFileUpload(event)">
+                        <div class="upload-text">eGS 운임표 업로드</div>
+                        <input type="file" id="excelFile" class="file-input" accept=".xlsx,.xls">
                     </div>
-                    <button class="clear-data-btn" onclick="clearSavedRatesData()">운임표<br>삭제</button>
+                    <button class="clear-data-btn" onclick="clearSavedRatesData()">운임표 삭제</button>
                 </div>
             </div>
             <div id="uploadStatus" class="upload-status hidden"></div>
@@ -69,12 +64,12 @@
                     <div class="section orange">
                         <div class="section-header orange">🚚 상품 정보 및 배송</div>
                         <div class="service-type-toggle">
-                            <div class="service-type-option active" data-type="standard">🚛 eGS Standard (5-10일)</div>
-                            <div class="service-type-option" data-type="express">✈️ eGS Express (2-5일)</div>
+                            <div class="service-type-option active" data-type="standard">🚛 eGS Standard</div>
+                            <div class="service-type-option" data-type="express">✈️ eGS Express</div>
                         </div>
                         <div class="form-grid">
-                            <div class="form-group"><label for="weight">실제 중량 (kg)</label><input type="number" step="0.1" id="weight" placeholder="예시 : 0.5, 2"></div>
-                            <div class="form-group"><label for="egsShipping">eGS 창고 입고비 (원)</label><input type="number" id="egsShipping" value="3400" placeholder="예시 : 3400"><div class="help-text">GS25 반값택배 최저요금: 3,400원</div></div>
+                            <div class="form-group"><label for="weight">실제 중량 (kg)</label><input type="number" step="0.1" id="weight" placeholder="예: 0.5"></div>
+                            <div class="form-group"><label for="egsShipping">eGS 창고 입고비 (원)</label><input type="number" id="egsShipping" value="3400"><div class="help-text">GS25 반값택배 등</div></div>
                         </div>
                         <div class="dimension-grid" style="margin-top: 16px;">
                             <div class="form-group"><label for="length">가로 (cm)</label><input type="number" id="length"></div>
@@ -91,10 +86,10 @@
                             <div class="form-group"><label for="category">eBay 카테고리 *</label><select id="category"><option value="">선택</option><option value="most_categories">대부분 카테고리</option><option value="books_movies_music">도서/영화/음악</option><option value="womens_bags">여성용 가방</option><option value="athletic_shoes">운동화</option><option value="jewelry_watches">보석/시계</option><option value="watches_parts">시계/부품</option><option value="coins_paper_money">동전/지폐</option><option value="bullion">금괴/귀금속</option><option value="guitars_basses">악기(기타/베이스)</option><option value="trading_cards">트레이딩 카드</option><option value="nft_categories">NFT</option></select></div>
                         </div>
                         <div class="form-grid" style="margin-top: 16px;">
-                            <div class="form-group"><label for="storeType">eBay 스토어 구독</label><select id="storeType"><option value="none">없음/Starter</option><option value="basic">Basic 이상</option></select><div class="help-text">구독 시 수수료 할인</div></div>
-                            <div class="form-group"><label for="isKoreanSeller">한국 판매자 여부</label><select id="isKoreanSeller"><option value="true">한국 판매자 (VAT 10%)</option><option value="false">해외 판매자</option></select><div class="help-text">한국 판매자는 VAT 10% 추가</div></div>
+                            <div class="form-group"><label for="storeType">eBay 스토어 구독</label><select id="storeType"><option value="none">없음/Starter</option><option value="basic">Basic 이상</option></select></div>
+                            <div class="form-group"><label for="isKoreanSeller">판매자 위치</label><select id="isKoreanSeller"><option value="true">한국 (VAT 10%)</option><option value="false">해외</option></select></div>
                         </div>
-                        <div class="form-group full" style="margin-top: 16px;"><label for="targetMargin">목표 마진율 (%)</label><input type="number" step="1" id="targetMargin" placeholder="예시 : 20"></div>
+                        <div class="form-group full" style="margin-top: 16px;"><label for="targetMargin">목표 마진율 (%)</label><input type="number" step="1" id="targetMargin" placeholder="예: 20"></div>
                     </div>
                     <button class="calculate-btn" onclick="calculateMargin()">🧮 마진 계산하기</button>
                 </div>
@@ -106,10 +101,10 @@
                     <div id="usageGuide" class="section blue">
                         <div class="section-header blue">📖 사용 방법</div>
                         <ul>
-                            <li>• <strong>1단계:</strong> eGS 운임표 엑셀 파일을 업로드하세요</li>
-                            <li>• <strong>2단계:</strong> 제품 정보(원가, 중량, 치수)를 입력하세요</li>
-                            <li>• <strong>3단계:</strong> 배송 목적지와 eBay 카테고리를 선택하세요</li>
-                            <li>• <strong>4단계:</strong> 목표 마진율을 설정하고 계산하기를 클릭하세요</li>
+                            <li>• <strong>1단계:</strong> eGS 운임표 엑셀 파일을 업로드하세요.</li>
+                            <li>• <strong>2단계:</strong> 제품 정보(원가, 중량, 치수)를 입력하세요.</li>
+                            <li>• <strong>3단계:</strong> 배송 목적지와 eBay 카테고리를 선택하세요.</li>
+                            <li>• <strong>4단계:</strong> 목표 마진율을 설정하고 계산하기를 클릭하세요.</li>
                             <li>• 💡 <strong>v2.2 업데이트:</strong> 탭 기능 추가 및 코드 구조화</li>
                         </ul>
                     </div>
@@ -117,7 +112,9 @@
             </div>
         </div>
 
-        <!-- eGS 운임표 탭 콘텐츠 -->
+        <!-- ================================== -->
+        <!--         eGS 운임표 탭 콘텐츠         -->
+        <!-- ================================== -->
         <div id="egsRates" class="tab-content">
             <div class="placeholder-section">
                 <h2>🚧 eGS 운임표 기능</h2>
@@ -128,10 +125,8 @@
 
     <!-- 외부 JS 라이브러리 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- 
-        JavaScript 파일 연결 부분입니다.
-        index.html 파일과 같은 위치에 있는 'js' 폴더 안의 각 파일을 불러옵니다.
-    -->
+    
+    <!-- JavaScript 파일 연결 -->
     <script src="js/main.js"></script>
     <script src="js/margin-calculator.js"></script>
     <script src="js/egs-rates.js"></script>
