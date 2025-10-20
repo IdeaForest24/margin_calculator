@@ -44,7 +44,7 @@
 .data-management-section { display: flex; gap: 12px; align-items: stretch; }
 
 .excel-upload-compact {
-    flex: 1;
+    flex-grow: 1;
     background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
     border: 2px dashed #0ea5e9;
     border-radius: 8px;
@@ -53,9 +53,10 @@
     transition: all 0.3s ease;
     cursor: pointer;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 12px;
+    min-width: 200px;
 }
 
 .excel-upload-compact:hover {
@@ -64,12 +65,11 @@
     transform: scale(1.02);
 }
 
-.excel-upload-compact .upload-icon { font-size: 24px; color: #0ea5e9; margin-bottom: 8px; }
-.excel-upload-compact .upload-text { font-size: 14px; font-weight: 600; color: #1e40af; margin-bottom: 4px; }
+.excel-upload-compact .upload-icon { font-size: 24px; color: #0ea5e9; }
+.excel-upload-compact .upload-text { font-size: 14px; font-weight: 600; color: #1e40af; }
 .file-input { display: none; }
 
 .clear-data-btn {
-    flex: 1;
     background: #fee2e2;
     color: #dc2626;
     border: 1px solid #fecaca;
@@ -78,11 +78,7 @@
     font-size: 14px;
     font-weight: 600;
     transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 16px;
+    padding: 16px 24px;
 }
 
 .clear-data-btn:hover { background: #fecaca; color: #b91c1c; transform: scale(1.02); }
@@ -120,7 +116,7 @@
 
 .help-text { font-size: 12px; color: #6b7280; margin-top: 4px; }
 .dimension-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-.info-box { font-size: 14px; color: #1d4ed8; background-color: #eff6ff; padding: 12px; border-radius: 6px; margin-top: 16px; }
+.info-box { font-size: 14px; color: #1d4ed8; background-color: #dbeafe; padding: 12px; border-radius: 6px; margin-top: 16px; border: 1px solid #bfdbfe; }
 
 .calculate-btn {
     width: 100%;
@@ -142,7 +138,7 @@
 
 .results-section { display: flex; flex-direction: column; gap: 24px; }
 .result-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 14px; }
-.result-item.total { font-weight: 600; font-size: 18px; border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 8px; }
+.result-item.total { font-weight: 600; font-size: 18px; }
 ul { list-style: none; padding-left: 0; }
 li { margin-bottom: 8px; font-size: 14px; }
 
