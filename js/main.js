@@ -7,7 +7,6 @@ let currentServiceType = 'standard';
 
 // --- DOMContentLoaded Event Listener ---
 window.addEventListener('DOMContentLoaded', function() {
-    // Initial actions on page load
     fetchExchangeRate();
     loadSavedRatesData();
     setupDragAndDrop();
@@ -16,7 +15,6 @@ window.addEventListener('DOMContentLoaded', function() {
 
 // --- Event Listener Setup ---
 function setupEventListeners() {
-    // 탭 기능 설정
     const tabLinks = document.querySelectorAll('.tab-link');
     tabLinks.forEach(link => {
         link.addEventListener('click', (event) => {
@@ -25,10 +23,8 @@ function setupEventListeners() {
         });
     });
     
-    // 계산기 입력 필드 이벤트
     const marginCalculatorTab = document.getElementById('marginCalculator');
     if (marginCalculatorTab) {
-        // 실시간 중량 정보 업데이트
         marginCalculatorTab.addEventListener('input', (event) => {
             const targetId = event.target.id;
             if (['length', 'width', 'height', 'weight'].includes(targetId)) {
@@ -36,18 +32,15 @@ function setupEventListeners() {
             }
         });
         
-        // 서비스 타입 토글
         document.querySelectorAll('.service-type-option').forEach(option => {
             option.addEventListener('click', (event) => {
                 toggleServiceType(event.currentTarget.dataset.type);
             });
         });
 
-        // 파일 업로드 input 변경 감지
         document.getElementById('excelFile').addEventListener('change', handleFileUpload);
     }
 }
-
 
 // --- Tab Management ---
 function openTab(event, tabName) {
@@ -60,7 +53,6 @@ function openTab(event, tabName) {
     document.getElementById(tabName).classList.add('active');
     document.querySelector(`.tab-link[onclick*="'${tabName}'"]`).classList.add('active');
 }
-
 
 // --- Common Utility Functions ---
 function showUploadStatus(message, type) {
