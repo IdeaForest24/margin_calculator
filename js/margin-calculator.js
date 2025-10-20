@@ -297,16 +297,35 @@ function calculateMargin() {
     const payoneerTotalFee = payoneerWithdrawalFee + payoneerExchangeFee;
 
     const finalReceiveUSD = ebayPayoutUSD - payoneerTotalFee;
-    const netProfitUSD = finalReceiveUSD - totalCostUSD;
-    const actualMarginRate = requiredSellingPriceUSD > 0 ? (netProfitUSD / requiredSellingPriceUSD) * 100 : 0;
+    const finalReceiveKRW = finalReceiveUSD * currentExchangeRate;
+    const netProfitKRW = finalReceiveKRW - totalCostKRW;
+    const actualMarginRate = requiredSellingPriceUSD > 0 ? (netProfitKRW / (requiredSellingPriceUSD * currentExchangeRate)) * 100 : 0;
     
     displayResults({
-        totalCostKRW, totalCostUSD, requiredSellingPriceUSD, ebayFeeBreakdown, vatUSD, ebayTotalFee, 
-        ebayPayoutUSD, payoneerTotalFee, finalReceiveUSD, netProfitUSD, targetMarginRate, finalWeight,
-        productCost: parseFloat(productCost), supplierShipping, egsShipping, egsInternationalShipping: egsShippingCost,
-        finalReceiveKRW: finalReceiveUSD * currentExchangeRate, netProfitKRW: netProfitUSD * currentExchangeRate,
-        actualMarginRate, volumetricWeight: calculateVolumetricWeight(),
-        hasStore, isKoreanSeller, destination, category, serviceType: currentServiceType
+        requiredSellingPriceUSD,
+        ebayFeeBreakdown,
+        vatUSD,
+        ebayTotalFee,
+        ebayPayoutUSD,
+        payoneerWithdrawalFee,
+        payoneerExchangeFee,
+        payoneerTotalFee,
+        finalReceiveKRW,
+        productCost: parseFloat(productCost),
+        supplierShipping,
+        egsShipping,
+        egsInternationalShipping: egsShippingCost,
+        totalCostKRW,
+        netProfitKRW,
+        actualMarginRate,
+        targetMarginRate,
+        finalWeight,
+        volumetricWeight: calculateVolumetricWeight(),
+        hasStore,
+        isKoreanSeller,
+        destination,
+        category,
+        serviceType: currentServiceType
     });
 }
 
@@ -317,64 +336,156 @@ function displayResults(results) {
     const settingsInfoContainer = document.getElementById('settingsInfo');
 
     const resultHTML = `
-        <div style="padding-bottom: 12px; border-bottom: 1px solid #e5e7eb;">
-            <div class="result-item" style="font-size: 15px;">
-                <span class="text-red"><strong>총 원가 (KRW)</strong></span>
-                <span class="text-red"><strong>${Math.round(results.totalCostKRW).toLocaleString()}원</strong></span>
+        <div class="flow-section">
+            <div class="flow-header">💵 eBay 판매 가격</div>
+            <div class="flow-content">
+                <div class="result-row main-price">
+                    <span>권장 판매가 (USD)</span>
+                    <span class="value-highlight blue">$${results.requiredSellingPriceUSD.toFixed(2)}</span>
+                </div>
             </div>
-            <div class="result-item text-gray" style="font-size: 12px;">└ 제품(${Math.round(results.productCost).toLocaleString()}) + 매입(${Math.round(results.supplierShipping).toLocaleString()}) + 입고(${Math.round(results.egsShipping).toLocaleString()}) + 국제(${Math.round(results.egsInternationalShipping).toLocaleString()})</div>
         </div>
 
-        <div class="result-item total text-blue" style="margin: 12px 0; border-top: none; padding-top: 0; font-size: 16px;">
-            <span><strong>💵 권장 판매가 (USD)</strong></span>
-            <span><strong>$${results.requiredSellingPriceUSD.toFixed(2)}</strong></span>
+        <div class="flow-divider">↓</div>
+
+        <div class="flow-section">
+            <div class="flow-header">📉 eBay 수수료 차감</div>
+            <div class="flow-content">
+                <div class="result-row small">
+                    <span>• Final Value Fee</span>
+                    <span class="text-red">-$${results.ebayFeeBreakdown.finalValueFee.toFixed(2)}</span>
+                </div>
+                <div class="result-row small">
+                    <span>• Per Order Fee</span>
+                    <span class="text-red">-$${results.ebayFeeBreakdown.perOrderFee.toFixed(2)}</span>
+                </div>
+                <div class="result-row small">
+                    <span>• International Fee (1.65%)</span>
+                    <span class="text-red">-$${results.ebayFeeBreakdown.internationalFee.toFixed(2)}</span>
+                </div>
+                ${results.isKoreanSeller ? `
+                <div class="result-row small">
+                    <span>• VAT (10%)</span>
+                    <span class="text-red">-$${results.vatUSD.toFixed(2)}</span>
+                </div>
+                ` : ''}
+                <div class="result-row total-fee">
+                    <span>eBay 총 수수료</span>
+                    <span class="text-red">-$${results.ebayTotalFee.toFixed(2)}</span>
+                </div>
+            </div>
         </div>
 
-        <div style="border-top: 1px dashed #d1d5db; padding-top: 12px;">
-            <div style="font-size: 13px; font-weight: 600; color: #6b7280; margin-bottom: 8px;">eBay 수수료 상세</div>
-            <div class="result-item" style="font-size: 13px;"><span>• Final Value Fee:</span> <span>$${results.ebayFeeBreakdown.finalValueFee.toFixed(2)}</span></div>
-            <div class="result-item" style="font-size: 13px;"><span>• Per Order Fee:</span> <span>$${results.ebayFeeBreakdown.perOrderFee.toFixed(2)}</span></div>
-            <div class="result-item" style="font-size: 13px;"><span>• International Fee (1.65%):</span> <span>$${results.ebayFeeBreakdown.internationalFee.toFixed(2)}</span></div>
-            ${results.isKoreanSeller ? `<div class="result-item" style="font-size: 13px;"><span>• VAT (10%):</span> <span>$${results.vatUSD.toFixed(2)}</span></div>` : ''}
-            <div class="result-item text-red" style="margin-top: 4px; font-size: 14px;"><strong>eBay 총 수수료:</strong> <strong>$${results.ebayTotalFee.toFixed(2)}</strong></div>
+        <div class="flow-divider">↓</div>
+
+        <div class="flow-section">
+            <div class="flow-header">💰 eBay 정산액</div>
+            <div class="flow-content">
+                <div class="result-row main-value">
+                    <span>eBay에서 받는 금액 (USD)</span>
+                    <span class="value-highlight blue">$${results.ebayPayoutUSD.toFixed(2)}</span>
+                </div>
+            </div>
         </div>
 
-        <div class="result-item" style="background: #eff6ff; padding: 8px; border-radius: 4px; margin: 12px 0;">
-            <span><strong>eBay 정산액:</strong></span>
-            <span class="text-blue"><strong>$${results.ebayPayoutUSD.toFixed(2)}</strong></span>
-        </div>
-        
-        <div style="border-top: 1px dashed #d1d5db; padding-top: 12px;">
-            <div style="font-size: 13px; font-weight: 600; color: #6b7280; margin-bottom: 8px;">Payoneer 수수료</div>
-            <div class="result-item" style="font-size: 13px;"><span>• 출금 수수료:</span> <span>$${(results.payoneerTotalFee > 0 ? 1.00 : 0.00).toFixed(2)}</span></div>
-            <div class="result-item" style="font-size: 13px;"><span>• 환전 수수료 (1.2%):</span> <span>$${(results.payoneerTotalFee > 1.0 ? results.payoneerTotalFee - 1.00 : 0).toFixed(2)}</span></div>
-            <div class="result-item text-red" style="margin-top: 4px; font-size: 14px;"><strong>Payoneer 총 수수료:</strong> <strong>$${results.payoneerTotalFee.toFixed(2)}</strong></div>
-        </div>
-        
-        <div class="result-item total" style="background: #f0fdf4; padding: 12px; border-radius: 6px; margin-top: 16px; border-top: none;">
-            <span style="font-size: 16px;"><strong>💰 최종 수익 (KRW):</strong></span>
-            <span class="text-green" style="font-size: 16px;"><strong>${Math.round(results.netProfitKRW).toLocaleString()}원</strong></span>
+        <div class="flow-divider">↓</div>
+
+        <div class="flow-section">
+            <div class="flow-header">📉 Payoneer 수수료 차감</div>
+            <div class="flow-content">
+                <div class="result-row small">
+                    <span>• 출금 수수료</span>
+                    <span class="text-red">-$${results.payoneerWithdrawalFee.toFixed(2)}</span>
+                </div>
+                <div class="result-row small">
+                    <span>• 환전 수수료 (1.2%)</span>
+                    <span class="text-red">-$${results.payoneerExchangeFee.toFixed(2)}</span>
+                </div>
+                <div class="result-row total-fee">
+                    <span>Payoneer 총 수수료</span>
+                    <span class="text-red">-$${results.payoneerTotalFee.toFixed(2)}</span>
+                </div>
+            </div>
         </div>
 
-        <div class="result-item" style="background: #f0fdf4; padding: 4px 12px; border-radius: 6px; margin-top: 8px;">
-            <span style="font-size: 14px;"><strong>📈 최종 마진율:</strong></span>
-            <span class="text-green" style="font-size: 14px;"><strong>${results.actualMarginRate.toFixed(2)}%</strong> (목표: ${results.targetMarginRate}%)</span>
+        <div class="flow-divider">↓</div>
+
+        <div class="flow-section">
+            <div class="flow-header">💵 Payoneer 정산액 (KRW 환산)</div>
+            <div class="flow-content">
+                <div class="result-row main-value">
+                    <span>입금 받는 금액 (원화)</span>
+                    <span class="value-highlight green">${Math.round(results.finalReceiveKRW).toLocaleString()}원</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flow-divider">↓</div>
+
+        <div class="flow-section">
+            <div class="flow-header">📦 제품 원가 차감</div>
+            <div class="flow-content">
+                <div class="result-row small">
+                    <span>• 제품 매입가</span>
+                    <span class="text-red">-${Math.round(results.productCost).toLocaleString()}원</span>
+                </div>
+                <div class="result-row small">
+                    <span>• 매입처 배송비</span>
+                    <span class="text-red">-${Math.round(results.supplierShipping).toLocaleString()}원</span>
+                </div>
+                <div class="result-row small">
+                    <span>• eGS 입고비</span>
+                    <span class="text-red">-${Math.round(results.egsShipping).toLocaleString()}원</span>
+                </div>
+                <div class="result-row small">
+                    <span>• 국제 배송비 (${results.finalWeight.toFixed(2)}kg)</span>
+                    <span class="text-red">-${Math.round(results.egsInternationalShipping).toLocaleString()}원</span>
+                </div>
+                <div class="result-row total-fee">
+                    <span>총 원가</span>
+                    <span class="text-red">-${Math.round(results.totalCostKRW).toLocaleString()}원</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flow-divider final">↓</div>
+
+        <div class="flow-section final-section">
+            <div class="flow-header final">🎯 최종 수익</div>
+            <div class="flow-content">
+                <div class="result-row final-profit">
+                    <span>최종 수익 (KRW)</span>
+                    <span class="value-highlight ${results.netProfitKRW >= 0 ? 'green' : 'red'}">
+                        ${results.netProfitKRW >= 0 ? '+' : ''}${Math.round(results.netProfitKRW).toLocaleString()}원
+                    </span>
+                </div>
+                <div class="result-row final-margin">
+                    <span>최종 마진율</span>
+                    <span class="value-highlight ${results.actualMarginRate >= results.targetMarginRate ? 'green' : 'orange'}">
+                        ${results.actualMarginRate.toFixed(2)}% <span class="target-margin">(목표: ${results.targetMarginRate}%)</span>
+                    </span>
+                </div>
+            </div>
         </div>
     `;
+    
     resultDetailsContainer.innerHTML = resultHTML;
 
     const serviceTypeText = results.serviceType === 'express' 
         ? '⚡ eGS Express' 
         : '🚛 eGS Standard';
+    
     const settingsHTML = `
         <div style="font-size: 14px; line-height: 1.8;">
             <div><strong>목적지:</strong> ${destinations[results.destination]}</div>
-            <div><strong>과금 중량:</strong> ${results.finalWeight.toFixed(2)}kg</div>
+            <div><strong>과금 중량:</strong> ${results.finalWeight.toFixed(2)}kg (부피: ${results.volumetricWeight.toFixed(2)}kg)</div>
             <div><strong>배송 서비스:</strong> ${serviceTypeText}</div>
             <div><strong>카테고리:</strong> ${ebayCategories[results.category].name}</div>
             <div><strong>스토어:</strong> ${results.hasStore ? 'Basic 이상' : '없음/Starter'}</div>
             <div><strong>판매자 위치:</strong> ${results.isKoreanSeller ? '한국 (VAT 10%)' : '해외'}</div>
-        </div>`;
+        </div>
+    `;
+    
     settingsInfoContainer.innerHTML = settingsHTML;
 
     document.getElementById('resultsContainer').classList.remove('hidden');
