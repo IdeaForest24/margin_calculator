@@ -1,6 +1,9 @@
+// js/main.js
+
 // --- Global Variables & Initial Setup ---
 let currentExchangeRate = 1300;
 let egsRatesData = null;
+let currentServiceType = 'standard';
 
 // --- DOMContentLoaded Event Listener ---
 window.addEventListener('DOMContentLoaded', function() {
@@ -8,51 +11,58 @@ window.addEventListener('DOMContentLoaded', function() {
     fetchExchangeRate();
     loadSavedRatesData();
     setupDragAndDrop();
-    setupTabEvents();
+    setupEventListeners();
+});
 
-    // Event listeners for calculator inputs (delegated from main)
+// --- Event Listener Setup ---
+function setupEventListeners() {
+    // 탭 기능 설정
+    const tabLinks = document.querySelectorAll('.tab-link');
+    tabLinks.forEach(link => {
+        link.addEventListener('click', (event) => {
+            const tabName = event.currentTarget.getAttribute('onclick').match(/'([^']+)'/)[1];
+            openTab(event, tabName);
+        });
+    });
+    
+    // 계산기 입력 필드 이벤트
     const marginCalculatorTab = document.getElementById('marginCalculator');
     if (marginCalculatorTab) {
+        // 실시간 중량 정보 업데이트
         marginCalculatorTab.addEventListener('input', (event) => {
             const targetId = event.target.id;
             if (['length', 'width', 'height', 'weight'].includes(targetId)) {
                 updateWeightInfo();
             }
         });
-    }
-});
-
-// --- Tab Management ---
-function setupTabEvents() {
-    const tabLinks = document.querySelectorAll('.tab-link');
-    tabLinks.forEach(link => {
-        link.addEventListener('click', (event) => {
-            openTab(event, event.target.textContent.includes('마진 계산기') ? 'marginCalculator' : 'egsRates');
+        
+        // 서비스 타입 토글
+        document.querySelectorAll('.service-type-option').forEach(option => {
+            option.addEventListener('click', (event) => {
+                toggleServiceType(event.currentTarget.dataset.type);
+            });
         });
-    });
+
+        // 파일 업로드 input 변경 감지
+        document.getElementById('excelFile').addEventListener('change', handleFileUpload);
+    }
 }
 
+
+// --- Tab Management ---
 function openTab(event, tabName) {
-    // Hide all tab contents
     const tabContents = document.querySelectorAll('.tab-content');
-    tabContents.forEach(content => {
-        content.classList.remove('active');
-    });
+    tabContents.forEach(content => content.classList.remove('active'));
 
-    // Deactivate all tab links
     const tabLinks = document.querySelectorAll('.tab-link');
-    tabLinks.forEach(link => {
-        link.classList.remove('active');
-    });
+    tabLinks.forEach(link => link.classList.remove('active'));
 
-    // Show the selected tab content and activate the link
     document.getElementById(tabName).classList.add('active');
-    event.currentTarget.classList.add('active');
+    document.querySelector(`.tab-link[onclick*="'${tabName}'"]`).classList.add('active');
 }
 
 
 // --- Common Utility Functions ---
-
 function showUploadStatus(message, type) {
     const statusDiv = document.getElementById('uploadStatus');
     statusDiv.textContent = message;
@@ -101,7 +111,6 @@ function updateManualExchangeRate(value) {
 }
 
 // --- LocalStorage Data Management ---
-
 function loadSavedRatesData() {
     try {
         const savedData = localStorage.getItem('egsRatesData');
@@ -132,8 +141,7 @@ function clearSavedRatesData() {
     }
 }
 
-// --- Drag and Drop Setup ---
-
+// --- Drag and Drop & File Upload ---
 function setupDragAndDrop() {
     const uploadSection = document.getElementById('uploadSection');
     if (!uploadSection) return;
@@ -144,19 +152,16 @@ function setupDragAndDrop() {
 
     uploadSection.addEventListener('dragover', () => {
         uploadSection.style.borderColor = '#0284c7';
-        uploadSection.style.background = 'linear-gradient(135deg, #e0f2fe, #bae6fd)';
         uploadSection.style.transform = 'scale(1.02)';
     });
     
     uploadSection.addEventListener('dragleave', () => {
         uploadSection.style.borderColor = '#0ea5e9';
-        uploadSection.style.background = 'linear-gradient(135deg, #f0f9ff, #e0f2fe)';
         uploadSection.style.transform = 'scale(1)';
     });
     
     uploadSection.addEventListener('drop', (e) => {
         uploadSection.style.borderColor = '#0ea5e9';
-        uploadSection.style.background = 'linear-gradient(135deg, #f0f9ff, #e0f2fe)';
         uploadSection.style.transform = 'scale(1)';
         
         const files = e.dataTransfer.files;
@@ -165,4 +170,70 @@ function setupDragAndDrop() {
             handleFileUpload({ target: { files: files } });
         }
     });
+}
+
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'].includes(file.type)) {
+        showUploadStatus('❌ Excel 파일만 업로드 가능합니다 (.xlsx, .xls)', 'error');
+        return;
+    }
+
+    showUploadStatus('📤 파일 업로드 중...', 'info');
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const parsedData = parseExcelWorkbook(workbook);
+            
+            if (parsedData && (Object.keys(parsedData.standard).length > 0 || Object.keys(parsedData.express).length > 0)) {
+                egsRatesData = parsedData;
+                localStorage.setItem('egsRatesData', JSON.stringify(parsedData));
+                localStorage.setItem('egsRatesLastUpdate', new Date().toISOString());
+                showUploadStatus(`✅ 운임표 업로드 완료! (${file.name})`, 'success');
+            } else {
+                showUploadStatus('❌ 운임표 형식이 올바르지 않거나 데이터가 없습니다.', 'error');
+            }
+        } catch (error) {
+            console.error('파일 파싱 오류:', error);
+            showUploadStatus('❌ 파일 읽기 실패.', 'error');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+// --- UI Interaction Functions ---
+function toggleServiceType(type) {
+    currentServiceType = type;
+    document.querySelectorAll('.service-type-option').forEach(option => option.classList.remove('active'));
+    document.querySelector(`.service-type-option[data-type="${type}"]`).classList.add('active');
+    updateWeightInfo();
+}
+
+function updateWeightInfo() {
+    const volumetricWeight = calculateVolumetricWeight();
+    const finalWeight = getFinalWeight();
+    const weightInfo = document.getElementById('weightInfo');
+    if (volumetricWeight > 0 || finalWeight > 0) {
+        const serviceTypeText = currentServiceType === 'express' ? 'eGS Express' : 'eGS Standard';
+        weightInfo.innerHTML = `📦 부피 중량: ${volumetricWeight.toFixed(2)}kg | <strong>과금 중량: ${finalWeight.toFixed(2)}kg</strong><br>🚚 선택된 서비스: ${serviceTypeText}`;
+        weightInfo.classList.remove('hidden');
+    } else {
+        weightInfo.classList.add('hidden');
+    }
+}
+
+function calculateVolumetricWeight() {
+    const length = parseFloat(document.getElementById('length').value) || 0;
+    const width = parseFloat(document.getElementById('width').value) || 0;
+    const height = parseFloat(document.getElementById('height').value) || 0;
+    return (length && width && height) ? (length * width * height) / 6000 : 0;
+}
+
+function getFinalWeight() {
+    const actualWeight = parseFloat(document.getElementById('weight').value) || 0;
+    return Math.max(actualWeight, calculateVolumetricWeight());
 }
