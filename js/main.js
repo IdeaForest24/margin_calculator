@@ -229,3 +229,54 @@ function getFinalWeight() {
     const actualWeight = parseFloat(document.getElementById('weight').value) || 0;
     return Math.max(actualWeight, calculateVolumetricWeight());
 }
+
+// --- Help Modal Functions ---
+function openHelpModal() {
+    const modal = document.getElementById('helpModal');
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    
+    // 수수료 체계 iframe 로드
+    const iframe = document.getElementById('feesIframe');
+    if (!iframe.src) {
+        iframe.src = 'js/ebay-fee-structure.html';
+    }
+}
+
+function closeHelpModal() {
+    const modal = document.getElementById('helpModal');
+    modal.classList.remove('show');
+    document.body.style.overflow = 'auto';
+}
+
+function switchHelpTab(tabName) {
+    // 탭 버튼 활성화
+    document.querySelectorAll('.help-tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // 탭 콘텐츠 표시
+    document.querySelectorAll('.help-tab-content').forEach(content => {
+        content.style.display = 'none';
+    });
+    
+    if (tabName === 'usage') {
+        document.getElementById('helpUsageContent').style.display = 'block';
+    } else if (tabName === 'fees') {
+        document.getElementById('helpFeesContent').style.display = 'block';
+    }
+}
+
+// ESC 키로 모달 닫기
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeHelpModal();
+    }
+});
+
+// 모달 배경 클릭 시 닫기
+document.addEventListener('click', function(event) {
+    const helpModal = document.getElementById('helpModal');
+    if (event.target === helpModal) {
+        closeHelpModal();
+    }
+});
