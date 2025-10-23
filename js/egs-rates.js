@@ -20,7 +20,7 @@ function openEgsSubTab(event, tabName) {
     }
 }
 
-// --- Country Search Functions ---
+// --- Country Search Functions --- (이 부분 전체 교체)
 function searchCountryRate() {
     const searchInput = document.getElementById('countrySearchInput').value.trim().toUpperCase();
     
@@ -29,28 +29,35 @@ function searchCountryRate() {
         return;
     }
     
-    // 국가 코드 매핑 (검색어 → 코드)
-    const countrySearchMap = {
-        'US': 'US', '미국': 'US', 'USA': 'US', 'UNITED STATES': 'US', 'AMERICA': 'US',
-        'CA': 'CA', '캐나다': 'CA', 'CANADA': 'CA',
-        'GB': 'GB', '영국': 'GB', 'UK': 'GB', 'UNITED KINGDOM': 'GB', 'BRITAIN': 'GB',
-        'DE': 'DE', '독일': 'DE', 'GERMANY': 'DE',
-        'IT': 'IT', '이탈리아': 'IT', 'ITALY': 'IT',
-        'FR': 'FR', '프랑스': 'FR', 'FRANCE': 'FR',
-        'ES': 'ES', '스페인': 'ES', 'SPAIN': 'ES',
-        'AU': 'AU', '호주': 'AU', 'AUSTRALIA': 'AU'
-    };
+    // 국가 코드 매핑 (검색어 → 코드) - 전체 유럽 국가 포함
+    const countrySearchMap = getCountrySearchMap();
     
-    const countryCode = countrySearchMap[searchInput];
+    let countryCode = countrySearchMap[searchInput];
     
+    // 매핑에 없으면 입력값 자체를 코드로 시도 (대소문자 무관)
     if (!countryCode) {
-        showSearchResultModal('❌ 검색 결과 없음', `"${searchInput}"에 해당하는 국가를 찾을 수 없습니다.<br><br>지원 국가: 미국(US), 캐나다(CA), 영국(GB), 독일(DE), 이탈리아(IT), 프랑스(FR), 스페인(ES), 호주(AU)`);
-        return;
+        countryCode = searchInput;
     }
     
     // 데이터 확인
-    if (!egsRatesData || !egsRatesData.standard || !egsRatesData.standard[countryCode]) {
-        showSearchResultModal('❌ 데이터 없음', `${getCountryName(countryCode)}의 운임 데이터가 없습니다.<br><br>운임표 파일을 업로드했는지 확인해주세요.`);
+    if (!egsRatesData || !egsRatesData.standard) {
+        showSearchResultModal('❌ 데이터 없음', '운임표 파일을 먼저 업로드해주세요.');
+        return;
+    }
+    
+    if (!egsRatesData.standard[countryCode]) {
+        // 데이터에 있는 국가 목록 표시
+        const availableCountries = Object.keys(egsRatesData.standard).sort();
+        const countryList = availableCountries.map(code => {
+            const name = getCountryName(code);
+            return name !== code ? `${name}(${code})` : code;
+        }).join(', ');
+        
+        showSearchResultModal(
+            '❌ 검색 결과 없음', 
+            `"${searchInput}"에 해당하는 국가 데이터가 없습니다.<br><br>` +
+            `<strong>현재 데이터에 포함된 국가:</strong><br>${countryList}`
+        );
         return;
     }
     
@@ -59,19 +66,8 @@ function searchCountryRate() {
     showCountryRateTable(countryCode, countryData);
 }
 
-function getCountryName(code) {
-    const countryNames = {
-        'US': '미국',
-        'CA': '캐나다',
-        'GB': '영국',
-        'DE': '독일',
-        'IT': '이탈리아',
-        'FR': '프랑스',
-        'ES': '스페인',
-        'AU': '호주'
-    };
-    return countryNames[code] || code;
-}
+// 기존 getCountryName 함수 전체 삭제
+// egs-utils.js의 getCountryName() 사용
 
 function showSearchResultModal(title, message) {
     const modal = document.createElement('div');
@@ -151,6 +147,8 @@ function closeSearchModal() {
 }
 
 // --- Standard 테이블 렌더링 ---
+// js/egs-rates.js 파일의 renderStandardTable 함수
+
 function renderStandardTable() {
     const container = document.getElementById('standardTableContainer');
     
@@ -159,7 +157,7 @@ function renderStandardTable() {
         container.innerHTML = `
             <div class="no-data-message">
                 <h3>📭 운임표 데이터 없음</h3>
-                <p>eGS 운임표를 업로드하면 여기에 표시됩니다.</p>
+                <p>마진 계산기 탭에서 eGS 운임표를 업로드하면 여기에 표시됩니다.</p>
             </div>
         `;
         return;
@@ -167,17 +165,13 @@ function renderStandardTable() {
 
     const standardData = egsRatesData.standard;
     
-    // 국가 순서 정의 (미국, 캐나다, 영국, 독일, 이탈리아, 프랑스, 스페인, 호주)
+    // [수정] 표시할 국가 순서 정의
     const countryOrder = ['US', 'CA', 'GB', 'DE', 'IT', 'FR', 'ES', 'AU'];
+    
+    // [수정] 국가 이름 목록 확장
     const countryNames = {
-        'US': '미국',
-        'CA': '캐나다',
-        'GB': '영국',
-        'DE': '독일',
-        'IT': '이탈리아',
-        'FR': '프랑스',
-        'ES': '스페인',
-        'AU': '호주'
+        'US': '미국', 'CA': '캐나다', 'GB': '영국', 'DE': '독일', 
+        'IT': '이탈리아', 'FR': '프랑스', 'ES': '스페인', 'AU': '호주'
     };
 
     // 사용 가능한 국가 목록 (데이터가 있고 순서에 포함된 국가만)
@@ -188,19 +182,17 @@ function renderStandardTable() {
     if (availableCountries.length === 0) {
         container.innerHTML = `
             <div class="no-data-message">
-                <h3>📭 Standard 운임표 데이터 없음</h3>
-                <p>업로드된 파일에 Standard 운임표 데이터가 없습니다.</p>
+                <h3>📭 표시할 운임표 데이터 없음</h3>
+                <p>업로드된 파일에 US, CA, GB, DE, IT, FR, ES, AU 국가의 운임 정보가 없습니다.</p>
             </div>
         `;
         return;
     }
 
-    // 모든 중량 값 수집 (정렬을 위해)
+    // 모든 중량 값 수집 및 정렬
     const allWeights = new Set();
     availableCountries.forEach(country => {
-        standardData[country].forEach(item => {
-            allWeights.add(item.weight);
-        });
+        standardData[country].forEach(item => allWeights.add(item.weight));
     });
     const sortedWeights = Array.from(allWeights).sort((a, b) => a - b);
 
@@ -210,41 +202,30 @@ function renderStandardTable() {
             <table class="rates-table">
                 <thead>
                     <tr>
-                        <th>중량 (kg)</th>
-    `;
+                        <th>중량 (kg)</th>`;
 
-    // 국가 헤더 추가
     availableCountries.forEach(code => {
-        tableHTML += `<th>${countryNames[code]}</th>`;
+        tableHTML += `<th>${countryNames[code]} (${code})</th>`;
     });
 
     tableHTML += `
                     </tr>
                 </thead>
-                <tbody>
-    `;
+                <tbody>`;
 
-    // 각 중량에 대한 행 생성
     sortedWeights.forEach(weight => {
-        tableHTML += `<tr><td>${weight.toFixed(1)}</td>`;
-        
+        tableHTML += `<tr><td>${weight.toFixed(2)}</td>`;
         availableCountries.forEach(country => {
             const item = standardData[country].find(d => d.weight === weight);
-            if (item) {
-                tableHTML += `<td class="price-cell">${item.price.toLocaleString()}원</td>`;
-            } else {
-                tableHTML += `<td></td>`; // 데이터 없으면 공백
-            }
+            tableHTML += item ? `<td class="price-cell">${item.price.toLocaleString()}원</td>` : `<td>-</td>`;
         });
-        
         tableHTML += `</tr>`;
     });
 
     tableHTML += `
                 </tbody>
             </table>
-        </div>
-    `;
+        </div>`;
 
     container.innerHTML = tableHTML;
 }
