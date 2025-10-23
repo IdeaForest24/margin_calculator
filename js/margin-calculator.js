@@ -157,6 +157,17 @@ function parseExpressSheet(data) {
 }
 
 
+// --- UI Interaction Functions ---
+function toggleAdInput() {
+    const adEnabled = document.getElementById('adEnabled').checked;
+    const adRateInput = document.getElementById('adRate');
+    adRateInput.disabled = !adEnabled;
+    if (!adEnabled) {
+        adRateInput.value = '';
+    }
+}
+
+
 // --- Core Calculation Logic ---
 function calculateEgsShipping(targetWeight, destination) {
     if (!egsRatesData || !egsRatesData[currentServiceType] || !egsRatesData[currentServiceType][destination]) return 0;
@@ -174,7 +185,7 @@ function calculateEgsShipping(targetWeight, destination) {
     return (targetWeight > lastRate.weight) ? lastRate.price : 0;
 }
 
-function calculateEbayFee(sellingPriceUSD, category, hasStore) {
+function calculateebayFee(sellingPriceUSD, category, hasStore) {
     const categoryData = ebayCategories[category];
     if (!categoryData) {
         return { finalValueFee: 0, perOrderFee: 0, internationalFee: 0, total: 0 };
@@ -218,16 +229,17 @@ function calculateEbayFee(sellingPriceUSD, category, hasStore) {
     };
 }
 
-function findTargetSellingPrice(totalCostUSD, targetMarginRate, category, hasStore, isKoreanSeller) {
+function findTargetSellingPrice(totalCostUSD, targetMarginRate, category, hasStore, isKoreanSeller, adRate) {
     let low = totalCostUSD;
     let high = totalCostUSD * 5;
     let bestPrice = high;
 
     for (let i = 0; i < 50; i++) {
         const midPrice = (low + high) / 2;
-        const ebayFeeBreakdown = calculateEbayFee(midPrice, category, hasStore);
+        const ebayFeeBreakdown = calculateebayFee(midPrice, category, hasStore);
         const vat = isKoreanSeller ? ebayFeeBreakdown.total * 0.1 : 0;
-        const ebayTotalFee = ebayFeeBreakdown.total + vat;
+        const adCost = adRate > 0 ? midPrice * (adRate / 100) : 0;
+        const ebayTotalFee = ebayFeeBreakdown.total + vat + adCost;
         const ebayPayout = midPrice - ebayTotalFee;
         const payoneerWithdrawalFee = ebayPayout > 1.0 ? 1.0 : 0;
         const payoneerExchangeFee = ebayPayout * 0.012;
@@ -272,6 +284,10 @@ function calculateMargin() {
     const egsShipping = parseFloat(document.getElementById('egsShipping').value) || 3400;
     const storeType = document.getElementById('storeType').value;
     const isKoreanSeller = document.getElementById('isKoreanSeller').value === 'true';
+    
+    // 광고 관련
+    const adEnabled = document.getElementById('adEnabled').checked;
+    const adRate = adEnabled ? (parseFloat(document.getElementById('adRate').value) || 0) : 0;
 
     const finalWeight = getFinalWeight();
     const egsShippingCost = calculateEgsShipping(finalWeight, destination);
@@ -285,11 +301,12 @@ function calculateMargin() {
     const hasStore = storeType !== 'none';
     const targetMarginRate = parseFloat(targetMargin);
 
-    const requiredSellingPriceUSD = findTargetSellingPrice(totalCostUSD, targetMarginRate, category, hasStore, isKoreanSeller);
-    const ebayFeeBreakdown = calculateEbayFee(requiredSellingPriceUSD, category, hasStore);
+    const requiredSellingPriceUSD = findTargetSellingPrice(totalCostUSD, targetMarginRate, category, hasStore, isKoreanSeller, adRate);
+    const ebayFeeBreakdown = calculateebayFee(requiredSellingPriceUSD, category, hasStore);
     
     const vatUSD = isKoreanSeller ? ebayFeeBreakdown.total * 0.1 : 0;
-    const ebayTotalFee = ebayFeeBreakdown.total + vatUSD;
+    const adCostUSD = adRate > 0 ? requiredSellingPriceUSD * (adRate / 100) : 0;
+    const ebayTotalFee = ebayFeeBreakdown.total + vatUSD + adCostUSD;
     const ebayPayoutUSD = requiredSellingPriceUSD - ebayTotalFee;
     
     const payoneerWithdrawalFee = ebayPayoutUSD > 1.0 ? 1.00 : 0;
@@ -305,6 +322,9 @@ function calculateMargin() {
         requiredSellingPriceUSD,
         ebayFeeBreakdown,
         vatUSD,
+        adEnabled,
+        adRate,
+        adCostUSD,
         ebayTotalFee,
         ebayPayoutUSD,
         payoneerWithdrawalFee,
@@ -368,12 +388,26 @@ function displayResultsInModal(results) {
         ? '⚡ eGS Express' 
         : '🚛 eGS Standard';
     
+    // 광고비 박스 HTML (조건부)
+    const adStepHTML = results.adEnabled && results.adRate > 0 ? `
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+            <div class="flow-step-header">📢 광고비</div>
+            <div class="flow-step-content">
+                <div class="flow-value main">
+                    <span>광고비 (${results.adRate}%)</span>
+                    <span class="value-number red">-$${results.adCostUSD.toFixed(2)}</span>
+                </div>
+            </div>
+        </div>
+    ` : '';
+    
     const modalHTML = `
         <!-- 가로 Flow 레이아웃 -->
         <div class="horizontal-flow">
             <!-- Step 1: 판매가 -->
             <div class="flow-step">
-                <div class="flow-step-header">💵 eBay 판매가</div>
+                <div class="flow-step-header">💵 ebay 판매가</div>
                 <div class="flow-step-content">
                     <div class="flow-value main">
                         <span>권장 판매가</span>
@@ -384,9 +418,9 @@ function displayResultsInModal(results) {
 
             <div class="flow-arrow">→</div>
 
-            <!-- Step 2: eBay 수수료 -->
+            <!-- Step 2: ebay 수수료 -->
             <div class="flow-step">
-                <div class="flow-step-header">📉 eBay 수수료</div>
+                <div class="flow-step-header">📉 ebay 수수료</div>
                 <div class="flow-step-content">
                     <div class="flow-value small">
                         <span>Final Value Fee</span>
@@ -408,16 +442,18 @@ function displayResultsInModal(results) {
                     ` : ''}
                     <div class="flow-value total">
                         <span>총 수수료</span>
-                        <span class="value-number red">-$${results.ebayTotalFee.toFixed(2)}</span>
+                        <span class="value-number red">-$${(results.ebayFeeBreakdown.total + results.vatUSD).toFixed(2)}</span>
                     </div>
                 </div>
             </div>
 
+            ${adStepHTML}
+
             <div class="flow-arrow">→</div>
 
-            <!-- Step 3: eBay 정산 -->
+            <!-- Step 3: ebay 정산 -->
             <div class="flow-step">
-                <div class="flow-step-header">💰 eBay 정산</div>
+                <div class="flow-step-header">💰 ebay 정산</div>
                 <div class="flow-step-content">
                     <div class="flow-value main">
                         <span>정산액 (USD)</span>
@@ -544,6 +580,12 @@ function displayResultsInModal(results) {
                     <span class="setting-label">판매자:</span>
                     <span class="setting-value">${results.isKoreanSeller ? '한국 (VAT 10%)' : '해외'}</span>
                 </div>
+                ${results.adEnabled ? `
+                <div class="setting-item">
+                    <span class="setting-label">광고:</span>
+                    <span class="setting-value">적용 (${results.adRate}%)</span>
+                </div>
+                ` : ''}
             </div>
         </div>
     `;
