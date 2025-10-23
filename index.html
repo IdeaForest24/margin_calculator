@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eBay 판매 마진 계산기 v2.0 Release</title>
+    <title>ebay 판매 마진 계산기 v2.0 Release</title>
 
     <!-- CSS 파일 연결 -->
     <link rel="stylesheet" href="css/main.css">
@@ -14,7 +14,7 @@
     <div class="container">
         <div class="header">
             <h1>
-                📈 eBay 판매 마진 계산기 <span class="version-badge">v2.0 Release</span>
+                📈 ebay 판매 마진 계산기 <span class="version-badge">v2.0 Release</span>
             </h1>
         </div>
 
@@ -52,51 +52,67 @@
             </div>
             <div id="uploadStatus" class="upload-status hidden"></div>
 
-            <!-- 수정 후 -->
-<div class="input-section-wrapper">
-    <div class="input-section">
-        <!-- 입력 폼들은 그대로 유지 -->
-        <div class="section blue">
-            <div class="section-header blue">📦 제품 원가 정보</div>
-            <div class="form-grid">
-                <div class="form-group"><label for="productCost">제품 원가 (원)</label><input type="number" id="productCost"></div>
-                <div class="form-group"><label for="supplierShipping">매입처 배송비 (원)</label><input type="number" id="supplierShipping"></div>
-            </div>
-        </div>
+            <!-- 입력 섹션 -->
+            <div class="input-section-wrapper">
+                <div class="input-section">
+                    <!-- 상단: 제품 원가 정보 + 상품 정보 및 배송 (2열) -->
+                    <div class="top-input-grid">
+                        <!-- 제품 원가 정보 -->
+                        <div class="section blue">
+                            <div class="section-header blue">📦 제품 원가 정보</div>
+                            <div class="form-grid">
+                                <div class="form-group"><label for="productCost">제품 원가 (원)</label><input type="number" id="productCost"></div>
+                                <div class="form-group"><label for="supplierShipping">매입처 배송비 (원)</label><input type="number" id="supplierShipping"></div>
+                            </div>
+                        </div>
 
-        <div class="section orange">
-            <div class="section-header orange">🚚 상품 정보 및 배송</div>
-            <div class="service-type-toggle">
-                <div class="service-type-option active" data-type="standard">🚛 eGS Standard</div>
-                <div class="service-type-option" data-type="express">✈️ eGS Express</div>
-            </div>
-            <div class="form-grid">
-                <div class="form-group"><label for="weight">실제 중량 (kg)</label><input type="number" step="0.1" id="weight" placeholder="예: 0.5"></div>
-                <div class="form-group"><label for="egsShipping">eGS 창고 입고비 (원)</label><input type="number" id="egsShipping"></div>
-            </div>
-            <div class="dimension-grid" style="margin-top: 16px;">
-                <div class="form-group"><label for="length">가로 (cm)</label><input type="number" id="length"></div>
-                <div class="form-group"><label for="width">세로 (cm)</label><input type="number" id="width"></div>
-                <div class="form-group"><label for="height">높이 (cm)</label><input type="number" id="height"></div>
-            </div>
-            <div id="weightInfo" class="info-box hidden"></div>
-        </div>
+                        <!-- 상품 정보 및 배송 -->
+                        <div class="section orange">
+                            <div class="section-header orange">🚚 상품 정보 및 배송</div>
+                            <div class="service-type-toggle">
+                                <div class="service-type-option active" data-type="standard">🚛 eGS Standard</div>
+                                <div class="service-type-option" data-type="express">✈️ eGS Express</div>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group"><label for="weight">실제 중량 (kg)</label><input type="number" step="0.1" id="weight" placeholder="예: 0.5"></div>
+                                <div class="form-group"><label for="egsShipping">eGS 창고 입고비 (원)</label><input type="number" id="egsShipping"></div>
+                            </div>
+                            <div class="dimension-grid" style="margin-top: 16px;">
+                                <div class="form-group"><label for="length">가로 (cm)</label><input type="number" id="length"></div>
+                                <div class="form-group"><label for="width">세로 (cm)</label><input type="number" id="width"></div>
+                                <div class="form-group"><label for="height">높이 (cm)</label><input type="number" id="height"></div>
+                            </div>
+                            <div id="weightInfo" class="info-box hidden"></div>
+                        </div>
+                    </div>
 
-        <div class="section green">
-            <div class="section-header green">🌍 eBay 판매 정보</div>
-            <div class="form-grid">
-                <div class="form-group"><label for="destination">목적지 *</label><select id="destination"><option value="">선택</option><option value="US">미국</option><option value="CA">캐나다</option><option value="GB">영국</option><option value="DE">독일</option><option value="FR">프랑스</option><option value="IT">이탈리아</option><option value="ES">스페인</option><option value="EU">기타 유럽</option><option value="AU">호주</option></select></div>
-                <div class="form-group"><label for="category">eBay 카테고리 *</label><select id="category"><option value="">선택</option><option value="most_categories">대부분 카테고리</option><option value="books_movies_music">도서/영화/음악</option><option value="womens_bags">여성용 가방</option><option value="athletic_shoes">운동화</option><option value="jewelry_watches">보석/시계</option><option value="watches_parts">시계/부품</option><option value="coins_paper_money">동전/지폐</option><option value="bullion">금괴/귀금속</option><option value="guitars_basses">악기(기타/베이스)</option><option value="trading_cards">트레이딩 카드</option><option value="nft_categories">NFT</option></select></div>
+                    <!-- 하단: ebay 판매 정보 (전체 너비) -->
+                    <div class="section green">
+                        <div class="section-header green">🌍 ebay 판매 정보</div>
+                        <div class="form-grid">
+                            <div class="form-group"><label for="destination">목적지 *</label><select id="destination"><option value="">선택</option><option value="US">미국</option><option value="CA">캐나다</option><option value="GB">영국</option><option value="DE">독일</option><option value="FR">프랑스</option><option value="IT">이탈리아</option><option value="ES">스페인</option><option value="EU">기타 유럽</option><option value="AU">호주</option></select></div>
+                            <div class="form-group"><label for="category">ebay 카테고리 *</label><select id="category"><option value="">선택</option><option value="most_categories">대부분 카테고리</option><option value="books_movies_music">도서/영화/음악</option><option value="womens_bags">여성용 가방</option><option value="athletic_shoes">운동화</option><option value="jewelry_watches">보석/시계</option><option value="watches_parts">시계/부품</option><option value="coins_paper_money">동전/지폐</option><option value="bullion">금괴/귀금속</option><option value="guitars_basses">악기(기타/베이스)</option><option value="trading_cards">트레이딩 카드</option><option value="nft_categories">NFT</option></select></div>
+                        </div>
+                        <div class="form-grid" style="margin-top: 16px;">
+                            <div class="form-group"><label for="storeType">ebay 스토어 구독</label><select id="storeType"><option value="none">없음/Starter</option><option value="basic">Basic 이상</option></select></div>
+                            <div class="form-group"><label for="isKoreanSeller">판매자 위치</label><select id="isKoreanSeller"><option value="true">한국 (VAT 10%)</option><option value="false">해외</option></select></div>
+                        </div>
+                        <div class="form-grid" style="margin-top: 16px;">
+                            <div class="form-group"><label for="targetMargin">목표 마진율 (%)</label><input type="number" step="1" id="targetMargin" placeholder="예: 20"></div>
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                    <input type="checkbox" id="adEnabled" onchange="toggleAdInput()" style="width: auto; margin: 0;">
+                                    <span>광고</span>
+                                </label>
+                                <input type="number" step="0.1" id="adRate" placeholder="예: 5" disabled>
+                                <div class="help-text">광고비율 (판매가의 %)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="calculate-btn" onclick="calculateMargin()">🧮 마진 계산하기</button>
+                </div>
             </div>
-            <div class="form-grid" style="margin-top: 16px;">
-                <div class="form-group"><label for="storeType">eBay 스토어 구독</label><select id="storeType"><option value="none">없음/Starter</option><option value="basic">Basic 이상</option></select></div>
-                <div class="form-group"><label for="isKoreanSeller">판매자 위치</label><select id="isKoreanSeller"><option value="true">한국 (VAT 10%)</option><option value="false">해외</option></select></div>
-            </div>
-            <div class="form-group full" style="margin-top: 16px;"><label for="targetMargin">목표 마진율 (%)</label><input type="number" step="1" id="targetMargin" placeholder="예: 20"></div>
-        </div>
-        <button class="calculate-btn" onclick="calculateMargin()">🧮 마진 계산하기</button>
-    </div>
-</div>
         </div>
 
         <!-- ================================== -->
@@ -134,7 +150,7 @@
     <div id="helpModal" class="modal">
         <div class="modal-content help-modal-content">
             <div class="modal-header">
-                <h2>📖 도움말 & eBay 수수료 체계</h2>
+                <h2>📖 도움말 & ebay 수수료 체계</h2>
                 <button class="modal-close" onclick="closeHelpModal()">✕</button>
             </div>
             <div class="modal-body help-modal-body">
@@ -149,8 +165,9 @@
                         <li><strong>제품 원가 입력:</strong> 제품 매입가와 배송비를 입력하세요.</li>
                         <li><strong>상품 정보 입력:</strong> 실제 중량과 치수(가로/세로/높이)를 입력하세요. 부피중량이 자동 계산됩니다.</li>
                         <li><strong>배송 서비스 선택:</strong> eGS Standard 또는 eGS Express를 선택하세요.</li>
-                        <li><strong>eBay 정보 입력:</strong> 목적지 국가, 카테고리, 스토어 구독 여부, 판매자 위치를 선택하세요.</li>
+                        <li><strong>ebay 정보 입력:</strong> 목적지 국가, 카테고리, 스토어 구독 여부, 판매자 위치를 선택하세요.</li>
                         <li><strong>목표 마진율 설정:</strong> 원하는 마진율(%)을 입력하세요.</li>
+                        <li><strong>광고비 설정 (선택):</strong> 광고를 체크하고 광고비율을 입력하면 판매가에 광고비가 포함됩니다.</li>
                         <li><strong>계산 실행:</strong> "🧮 마진 계산하기" 버튼을 클릭하면 모달 팝업으로 상세 결과가 표시됩니다.</li>
                     </ol>
                     <div style="background: #eff6ff; padding: 16px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #3b82f6;">
@@ -159,6 +176,7 @@
                             <li>최소 판매가는 $20 이상을 권장합니다.</li>
                             <li>VAT ID를 등록하면 수수료를 약 1.5% 절감할 수 있습니다.</li>
                             <li>부피중량과 실제 중량 중 큰 값으로 배송비가 계산됩니다.</li>
+                            <li>광고비는 판매가 대비 비율로 계산되며, 일반적으로 3-10% 사이를 설정합니다.</li>
                         </ul>
                     </div>
                 </div>
