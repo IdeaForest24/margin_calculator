@@ -104,19 +104,15 @@ function updateManualExchangeRate(value) {
 
 // --- LocalStorage Data Management ---
 function loadSavedRatesData() {
-    try {
-        const savedData = localStorage.getItem('egsRatesData');
+    // egs-utils.js에 정의된 loadRatesData 함수 사용
+    const loadedData = loadRatesData(); 
+    
+    if (loadedData) {
+        egsRatesData = loadedData;
         const lastUpdate = localStorage.getItem('egsRatesLastUpdate');
-        
-        if (savedData) {
-            egsRatesData = JSON.parse(savedData);
-            showUploadStatus(`✅ 저장된 운임표 로드됨 (${new Date(lastUpdate).toLocaleDateString()})`, 'success');
-        } else {
-            showUploadStatus('⚠️ 운임표를 업로드해주세요. 계산이 불가능합니다.', 'info');
-        }
-    } catch (error) {
-        console.error('저장된 데이터 로드 오류:', error);
-        showUploadStatus('❌ 저장된 운임표 로드 실패. 새로 업로드해주세요.', 'error');
+        showUploadStatus(`✅ 저장된 운임표 로드됨 (${new Date(lastUpdate).toLocaleDateString()})`, 'success');
+    } else {
+        showUploadStatus('⚠️ 운임표를 업로드해주세요. 계산이 불가능합니다.', 'info');
     }
 }
 
@@ -173,37 +169,44 @@ function handleFileUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    if (!['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'].includes(file.type)) {
-        showUploadStatus('❌ Excel 파일만 업로드 가능합니다 (.xlsx, .xls)', 'error');
+    // 파일 타입 검사는 그대로 유지
+    if (!['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'application/csv'].includes(file.type)) {
+        showUploadStatus('❌ Excel 또는 CSV 파일만 업로드 가능합니다 (.xlsx, .xls, .csv)', 'error');
         return;
     }
 
-    showUploadStatus('📤 파일 업로드 중...', 'info');
+    showUploadStatus('📤 파일 분석 중...', 'info');
     const reader = new FileReader();
+    
     reader.onload = function(e) {
         try {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
+            
+            // egs-utils.js에 새로 정의된 파서 함수 호출
             const parsedData = parseExcelWorkbook(workbook);
             
             if (parsedData && (Object.keys(parsedData.standard).length > 0 || Object.keys(parsedData.express).length > 0)) {
                 egsRatesData = parsedData;
-                localStorage.setItem('egsRatesData', JSON.stringify(parsedData));
-                localStorage.setItem('egsRatesLastUpdate', new Date().toISOString());
-                showUploadStatus(`✅ 운임표 업로드 완료! (${file.name})`, 'success');
                 
-                // eGS 운임표 테이블 갱신
+                // localStorage에 저장하는 로직은 egs-utils.js의 함수를 사용하도록 변경 가능
+                saveRatesData(parsedData); // saveRatesData는 egs-utils.js에 있어야 합니다.
+                
+                showUploadStatus(`✅ 운임표 업로드 완료! (${Object.keys(parsedData.standard).length}개 Standard 국가, ${Object.keys(parsedData.express).length}개 Express 국가)`, 'success');
+                
+                // eGS 운임표 탭이 열려있으면 테이블 즉시 갱신
                 if (typeof window.updateEgsRatesTables === 'function') {
                     window.updateEgsRatesTables();
                 }
             } else {
-                showUploadStatus('❌ 운임표 형식이 올바르지 않거나 데이터가 없습니다.', 'error');
+                showUploadStatus('❌ 유효한 eGS 운임 데이터를 찾지 못했습니다. 파일 형식을 확인해주세요.', 'error');
             }
         } catch (error) {
             console.error('파일 파싱 오류:', error);
-            showUploadStatus('❌ 파일 읽기 실패.', 'error');
+            showUploadStatus('❌ 파일 처리 중 오류가 발생했습니다. 콘솔을 확인해주세요.', 'error');
         }
     };
+    
     reader.readAsArrayBuffer(file);
 }
 
