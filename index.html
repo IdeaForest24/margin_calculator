@@ -119,9 +119,57 @@
         <!--         eGS 운임표 탭 콘텐츠         -->
         <!-- ================================== -->
         <div id="egsRates" class="tab-content">
-            <div class="placeholder-section">
-                <h2>🚧 eGS 운임표 기능</h2>
-                <p>이 기능은 현재 준비 중입니다. 곧 추가될 예정입니다.</p>
+            <div class="egs-rates-header">
+                <h2>📋 eGS 운임표</h2>
+                <p class="egs-rates-description">업로드된 eGS 운임표를 확인할 수 있습니다.</p>
+            </div>
+
+            <!-- eGS 서브탭 -->
+            <div class="egs-subtabs">
+                <button class="egs-subtab-link active" onclick="openEgsSubTab(event, 'egsStandard')">
+                    🚛 Standard
+                </button>
+                <button class="egs-subtab-link" onclick="openEgsSubTab(event, 'egsExpress')">
+                    ✈️ Express
+                </button>
+            </div>
+
+            <!-- Standard 서브탭 -->
+<div id="egsStandard" class="egs-subtab-content active">
+    <!-- 검색 영역 -->
+    <div class="country-search-section">
+        <div class="country-search-header">
+            🔍 국가별 배송비 검색
+        </div>
+        <div class="country-search-form">
+            <input 
+                type="text" 
+                id="countrySearchInput" 
+                class="country-search-input" 
+                placeholder="국가명 또는 코드 입력 (예: 미국, US, Canada)"
+            >
+            <button class="country-search-btn" onclick="searchCountryRate()">검색</button>
+        </div>
+        <div class="country-search-hint">
+            💡 지원 국가: 미국(US), 캐나다(CA), 영국(GB), 독일(DE), 이탈리아(IT), 프랑스(FR), 스페인(ES), 호주(AU)
+        </div>
+    </div>
+    
+    <!-- 운임표 테이블 -->
+    <div id="standardTableContainer">
+        <div class="no-data-message">
+            <h3>📭 운임표 데이터 없음</h3>
+            <p>eGS 운임표를 업로드하면 여기에 표시됩니다.</p>
+        </div>
+    </div>
+</div>
+
+            <!-- Express 서브탭 콘텐츠 -->
+            <div id="egsExpress" class="egs-subtab-content">
+                <div class="placeholder-section">
+                    <h2>🚧 eGS Express 운임표</h2>
+                    <p>이 기능은 현재 준비 중입니다. 곧 추가될 예정입니다.</p>
+                </div>
             </div>
         </div>
     </div>
