@@ -1,5 +1,395 @@
 /* --- eGS Rates Tab Specific Styles --- */
 
+.egs-rates-header {
+    margin-bottom: 24px;
+}
+
+.egs-rates-header h2 {
+    font-size: 28px;
+    color: #1f2937;
+    margin-bottom: 8px;
+}
+
+.egs-rates-description {
+    font-size: 16px;
+    color: #6b7280;
+}
+
+/* --- eGS 서브탭 스타일 --- */
+.egs-subtabs {
+    display: flex;
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 24px;
+    background: #f9fafb;
+}
+
+.egs-subtab-link {
+    padding: 12px 24px;
+    cursor: pointer;
+    border: none;
+    background-color: transparent;
+    font-size: 16px;
+    font-weight: 600;
+    color: #6b7280;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease-in-out;
+}
+
+.egs-subtab-link:hover {
+    color: #1d4ed8;
+    background: #eff6ff;
+}
+
+.egs-subtab-link.active {
+    color: #1d4ed8;
+    border-bottom-color: #3b82f6;
+    background: white;
+}
+
+.egs-subtab-content {
+    display: none;
+}
+
+.egs-subtab-content.active {
+    display: block;
+}
+
+/* --- 검색 영역 스타일 --- */
+.country-search-section {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    border: 2px solid #3b82f6;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.country-search-header {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1d4ed8;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.country-search-form {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+}
+
+.country-search-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid #3b82f6;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.country-search-input:focus {
+    outline: none;
+    border-color: #1d4ed8;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.country-search-btn {
+    padding: 12px 32px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.country-search-btn:hover {
+    background: linear-gradient(135deg, #1d4ed8, #1e40af);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.country-search-hint {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* --- 검색 결과 모달 스타일 --- */
+.search-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.search-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+}
+
+.search-modal-content {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideDown 0.3s ease;
+}
+
+.search-modal-content.large {
+    max-width: 700px;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.search-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 2px solid #e5e7eb;
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+}
+
+.search-modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    color: #1f2937;
+    font-weight: 700;
+}
+
+.search-modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #6b7280;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.search-modal-close:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+    transform: rotate(90deg);
+}
+
+.search-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.search-modal-body p {
+    line-height: 1.8;
+    color: #374151;
+    margin: 0;
+}
+
+.search-modal-footer {
+    padding: 16px 24px;
+    border-top: 2px solid #e5e7eb;
+    display: flex;
+    justify-content: center;
+    background: #f9fafb;
+}
+
+.search-modal-btn {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    border: none;
+    padding: 10px 32px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.search-modal-btn:hover {
+    background: linear-gradient(135deg, #1d4ed8, #1e40af);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* --- 국가별 운임표 테이블 --- */
+.country-rate-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.country-rate-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.country-rate-table thead th {
+    padding: 14px 16px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.country-rate-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.country-rate-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.country-rate-table tbody tr:nth-child(even) {
+    background: #fafbfc;
+}
+
+.country-rate-table tbody tr:nth-child(even):hover {
+    background: #f1f3f5;
+}
+
+.country-rate-table tbody td {
+    padding: 12px 16px;
+    text-align: center;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+}
+
+.country-rate-table tbody td:first-child {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+/* --- 운임표 테이블 스타일 --- */
+.rates-table-wrapper {
+    overflow-x: auto;
+    margin: 24px 0;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.rates-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    min-width: 800px;
+}
+
+.rates-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.rates-table thead th {
+    padding: 16px 12px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 14px;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.rates-table thead th:first-child {
+    text-align: left;
+    padding-left: 20px;
+    width: 120px;
+}
+
+.rates-table thead th:last-child {
+    border-right: none;
+}
+
+.rates-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.rates-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.rates-table tbody tr:nth-child(even) {
+    background: #fafbfc;
+}
+
+.rates-table tbody tr:nth-child(even):hover {
+    background: #f1f3f5;
+}
+
+.rates-table tbody td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+    font-size: 14px;
+}
+
+.rates-table tbody td:first-child {
+    font-weight: 600;
+    color: #1f2937;
+    text-align: left;
+    padding-left: 20px;
+    background: #f9fafb;
+}
+
+.rates-table tbody td:last-child {
+    border-right: none;
+}
+
+.rates-table tbody td.price-cell {
+    color: #1d4ed8;
+    font-weight: 500;
+}
+
+/* --- No Data 메시지 --- */
+.no-data-message {
+    text-align: center;
+    padding: 60px 20px;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    border-radius: 12px;
+    border: 2px dashed #d1d5db;
+}
+
+.no-data-message h3 {
+    font-size: 24px;
+    color: #6b7280;
+    margin-bottom: 12px;
+}
+
+.no-data-message p {
+    font-size: 16px;
+    color: #9ca3af;
+}
+
+/* --- Placeholder Section --- */
 .placeholder-section {
     padding: 40px;
     text-align: center;
@@ -18,4 +408,59 @@
 .placeholder-section p {
     font-size: 16px;
     color: #6b7280;
+}
+
+/* --- 반응형 디자인 --- */
+@media (max-width: 768px) {
+    .rates-table-wrapper {
+        border-radius: 8px;
+    }
+
+    .rates-table thead th {
+        padding: 12px 8px;
+        font-size: 12px;
+    }
+
+    .rates-table tbody td {
+        padding: 10px 8px;
+        font-size: 13px;
+    }
+
+    .rates-table tbody td:first-child {
+        padding-left: 12px;
+    }
+
+    .egs-subtab-link {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+    
+    .country-search-section {
+        padding: 16px;
+    }
+    
+    .country-search-form {
+        flex-direction: column;
+    }
+    
+    .country-search-btn {
+        width: 100%;
+    }
+    
+    .search-modal-content {
+        width: 95%;
+        max-height: 85vh;
+    }
+    
+    .search-modal-header {
+        padding: 16px;
+    }
+    
+    .search-modal-header h3 {
+        font-size: 16px;
+    }
+    
+    .search-modal-body {
+        padding: 16px;
+    }
 }
