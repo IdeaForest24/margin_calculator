@@ -127,6 +127,11 @@ function clearSavedRatesData() {
         egsRatesData = null;
         showUploadStatus('✅ 저장된 운임표 데이터가 삭제되었습니다.', 'success');
         
+        // eGS 운임표 테이블 갱신
+        if (typeof window.updateEgsRatesTables === 'function') {
+            window.updateEgsRatesTables();
+        }
+        
         setTimeout(() => {
             showUploadStatus('⚠️ 운임표를 업로드해주세요. 계산이 불가능합니다.', 'info');
         }, 2000);
@@ -186,6 +191,11 @@ function handleFileUpload(event) {
                 localStorage.setItem('egsRatesData', JSON.stringify(parsedData));
                 localStorage.setItem('egsRatesLastUpdate', new Date().toISOString());
                 showUploadStatus(`✅ 운임표 업로드 완료! (${file.name})`, 'success');
+                
+                // eGS 운임표 테이블 갱신
+                if (typeof window.updateEgsRatesTables === 'function') {
+                    window.updateEgsRatesTables();
+                }
             } else {
                 showUploadStatus('❌ 운임표 형식이 올바르지 않거나 데이터가 없습니다.', 'error');
             }
