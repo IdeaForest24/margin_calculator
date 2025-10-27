@@ -18,9 +18,13 @@ function openEgsSubTab(event, tabName) {
     if (tabName === 'egsStandard') {
         renderStandardTable();
     }
+    // ⭐ Express 탭이 열릴 때 테이블 렌더링
+    else if (tabName === 'egsExpress') {
+        renderExpressTable();
+    }
 }
 
-// --- Country Search Functions --- (이 부분 전체 교체)
+// --- Standard Country Search Functions ---
 function searchCountryRate() {
     const searchInput = document.getElementById('countrySearchInput').value.trim().toUpperCase();
     
@@ -29,24 +33,19 @@ function searchCountryRate() {
         return;
     }
     
-    // 국가 코드 매핑 (검색어 → 코드) - 전체 유럽 국가 포함
     const countrySearchMap = getCountrySearchMap();
-    
     let countryCode = countrySearchMap[searchInput];
     
-    // 매핑에 없으면 입력값 자체를 코드로 시도 (대소문자 무관)
     if (!countryCode) {
         countryCode = searchInput;
     }
     
-    // 데이터 확인
     if (!egsRatesData || !egsRatesData.standard) {
         showSearchResultModal('❌ 데이터 없음', '운임표 파일을 먼저 업로드해주세요.');
         return;
     }
     
     if (!egsRatesData.standard[countryCode]) {
-        // 데이터에 있는 국가 목록 표시
         const availableCountries = Object.keys(egsRatesData.standard).sort();
         const countryList = availableCountries.map(code => {
             const name = getCountryName(code);
@@ -61,13 +60,164 @@ function searchCountryRate() {
         return;
     }
     
-    // 결과 표시
     const countryData = egsRatesData.standard[countryCode];
-    showCountryRateTable(countryCode, countryData);
+    showCountryRateTable(countryCode, countryData, 'Standard');
 }
 
-// 기존 getCountryName 함수 전체 삭제
-// egs-utils.js의 getCountryName() 사용
+// ⭐ Express 국가 검색 함수
+function searchExpressCountryRate() {
+    let searchInput = document.getElementById('expressCountrySearchInput').value.trim();
+    const originalInput = searchInput; // 검색 결과 표시에 사용할 원본 입력값
+    
+    if (!searchInput) {
+        alert('국가명을 입력해주세요.');
+        return;
+    }
+    
+    if (!egsRatesData || !egsRatesData.expressZones || !egsRatesData.express) {
+        showSearchResultModal('❌ 데이터 없음', '운임표 파일을 먼저 업로드해주세요.');
+        return;
+    }
+    
+    // 한글 검색어 -> 영어 국가명으로 변환 (country-data.js의 COUNTRY_MAP 사용)
+    const englishCountryName = COUNTRY_MAP[searchInput];
+    if (englishCountryName) {
+        searchInput = englishCountryName; // 한글 이름이 맵에 있으면 영어 이름으로 교체
+    }
+    
+    // 국가명으로 Zone 찾기 (대소문자 구분 없이)
+    const foundZone = findZoneByCountry(searchInput.toUpperCase());
+    
+    if (!foundZone) {
+        showSearchResultModal(
+            '❌ 검색 결과 없음', 
+            `"${originalInput}"에 해당하는 국가를 찾을 수 없습니다.<br><br>` +
+            `국가명은 한글 또는 영어로 입력해주세요. (예: 미국, United States)`
+        );
+        return;
+    }
+    
+    // Zone의 운임표 표시
+    showZoneRateTable(foundZone.zone, foundZone.country);
+}
+
+// ⭐ 국가명으로 Zone 찾기
+function findZoneByCountry(searchTerm) {
+    if (!egsRatesData || !egsRatesData.expressZones) return null;
+    
+    const term = searchTerm.toUpperCase();
+    
+    for (const [zone, countries] of Object.entries(egsRatesData.expressZones)) {
+        const found = countries.find(country => 
+            country.name.toUpperCase().includes(term) || 
+            (country.code && country.code.toUpperCase() === term)
+        );
+        
+        if (found) {
+            return { zone, country: found.name };
+        }
+    }
+    
+    return null;
+}
+
+// ⭐ Zone별 운임표 모달
+function showZoneRateTable(zone, highlightCountry = null) {
+    if (!egsRatesData || !egsRatesData.express || !egsRatesData.express[zone]) {
+        alert(`Zone ${zone}의 운임 데이터가 없습니다.`);
+        return;
+    }
+    
+    const rateData = egsRatesData.express[zone];
+    
+    let tableHTML = `
+        <table class="country-rate-table">
+            <thead>
+                <tr>
+                    <th>중량 (kg)</th>
+                    <th>운임 (원)</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    rateData.forEach(item => {
+        tableHTML += `
+            <tr>
+                <td>${item.weight.toFixed(1)}</td>
+                <td class="price-cell">${item.price.toLocaleString()}원</td>
+            </tr>
+        `;
+    });
+    
+    tableHTML += `
+            </tbody>
+        </table>
+    `;
+    
+    const titleText = highlightCountry 
+        ? `✈️ Zone ${zone} - Express 운임표<br><small style="font-size: 14px; color: #6b7280;">검색 국가: ${highlightCountry}</small>`
+        : `✈️ Zone ${zone} - Express 운임표`;
+    
+    const modal = document.createElement('div');
+    modal.className = 'search-modal';
+    modal.innerHTML = `
+        <div class="search-modal-content large">
+            <div class="search-modal-header">
+                <h3>${titleText}</h3>
+                <button class="search-modal-close" onclick="closeSearchModal()">&times;</button>
+            </div>
+            <div class="search-modal-body">
+                ${tableHTML}
+            </div>
+            <div class="search-modal-footer">
+                <button class="search-modal-btn" onclick="closeSearchModal()">닫기</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    setTimeout(() => modal.classList.add('show'), 10);
+}
+
+// ⭐ Zone 클릭 → 국가 목록 모달 (한글 변환 적용)
+function showZoneCountries(zone) {
+    if (!egsRatesData || !egsRatesData.expressZones || !egsRatesData.expressZones[zone]) {
+        alert(`Zone ${zone}의 국가 정보가 없습니다.`);
+        return;
+    }
+    
+    const countries = egsRatesData.expressZones[zone];
+    
+    let countryListHTML = '<ul style="line-height: 2; margin-left: 20px;">';
+    countries.forEach(country => {
+        // 영문 국가명을 한글명으로 변환 (없으면 영문명 그대로 사용)
+        const koreanName = ENGLISH_TO_KOREAN_MAP[country.name] || country.name;
+        countryListHTML += `<li>${koreanName}${country.code ? ` (${country.code})` : ''}</li>`;
+    });
+    countryListHTML += '</ul>';
+    
+    const modal = document.createElement('div');
+    modal.className = 'search-modal';
+    modal.innerHTML = `
+        <div class="search-modal-content">
+            <div class="search-modal-header">
+                <h3>🌍 Zone ${zone} 국가 목록</h3>
+                <button class="search-modal-close" onclick="closeSearchModal()">&times;</button>
+            </div>
+            <div class="search-modal-body">
+                <p style="margin-bottom: 16px; font-weight: 600; color: #1f2937;">
+                    총 ${countries.length}개 국가
+                </p>
+                ${countryListHTML}
+            </div>
+            <div class="search-modal-footer">
+                <button class="search-modal-btn" onclick="closeSearchModal()">닫기</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    setTimeout(() => modal.classList.add('show'), 10);
+}
 
 function showSearchResultModal(title, message) {
     const modal = document.createElement('div');
@@ -90,7 +240,7 @@ function showSearchResultModal(title, message) {
     setTimeout(() => modal.classList.add('show'), 10);
 }
 
-function showCountryRateTable(countryCode, data) {
+function showCountryRateTable(countryCode, data, serviceType) {
     const countryName = getCountryName(countryCode);
     
     let tableHTML = `
@@ -123,7 +273,7 @@ function showCountryRateTable(countryCode, data) {
     modal.innerHTML = `
         <div class="search-modal-content large">
             <div class="search-modal-header">
-                <h3>🌍 ${countryName} (${countryCode}) - Standard 운임표</h3>
+                <h3>🌍 ${countryName} (${countryCode}) - ${serviceType} 운임표</h3>
                 <button class="search-modal-close" onclick="closeSearchModal()">&times;</button>
             </div>
             <div class="search-modal-body">
@@ -147,12 +297,9 @@ function closeSearchModal() {
 }
 
 // --- Standard 테이블 렌더링 ---
-// js/egs-rates.js 파일의 renderStandardTable 함수
-
 function renderStandardTable() {
     const container = document.getElementById('standardTableContainer');
     
-    // egsRatesData가 없거나 standard 데이터가 없는 경우
     if (!egsRatesData || !egsRatesData.standard || Object.keys(egsRatesData.standard).length === 0) {
         container.innerHTML = `
             <div class="no-data-message">
@@ -164,17 +311,12 @@ function renderStandardTable() {
     }
 
     const standardData = egsRatesData.standard;
-    
-    // [수정] 표시할 국가 순서 정의
     const countryOrder = ['US', 'CA', 'GB', 'DE', 'IT', 'FR', 'ES', 'AU'];
-    
-    // [수정] 국가 이름 목록 확장
     const countryNames = {
         'US': '미국', 'CA': '캐나다', 'GB': '영국', 'DE': '독일', 
         'IT': '이탈리아', 'FR': '프랑스', 'ES': '스페인', 'AU': '호주'
     };
 
-    // 사용 가능한 국가 목록 (데이터가 있고 순서에 포함된 국가만)
     const availableCountries = countryOrder.filter(code => 
         standardData[code] && standardData[code].length > 0
     );
@@ -189,14 +331,12 @@ function renderStandardTable() {
         return;
     }
 
-    // 모든 중량 값 수집 및 정렬
     const allWeights = new Set();
     availableCountries.forEach(country => {
         standardData[country].forEach(item => allWeights.add(item.weight));
     });
     const sortedWeights = Array.from(allWeights).sort((a, b) => a - b);
 
-    // 테이블 HTML 생성
     let tableHTML = `
         <div class="rates-table-wrapper">
             <table class="rates-table">
@@ -230,18 +370,92 @@ function renderStandardTable() {
     container.innerHTML = tableHTML;
 }
 
+// ⭐ Express 테이블 렌더링
+function renderExpressTable() {
+    const container = document.getElementById('expressTableContainer');
+    
+    if (!egsRatesData || !egsRatesData.express || Object.keys(egsRatesData.express).length === 0) {
+        container.innerHTML = `
+            <div class="no-data-message">
+                <h3>📭 Express 운임표 데이터 없음</h3>
+                <p>마진 계산기 탭에서 eGS 운임표를 업로드하면 여기에 표시됩니다.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const expressData = egsRatesData.express;
+    
+    // 모든 Zone 수집 및 정렬
+    const allZones = Object.keys(expressData).sort((a, b) => {
+        // D-1, D-2 같은 형식 처리
+        const getZoneValue = (zone) => {
+            const match = zone.match(/^([A-Z])(-(\d))?$/);
+            if (match) {
+                const letter = match[1].charCodeAt(0);
+                const number = match[3] ? parseInt(match[3]) : 0;
+                return letter * 10 + number;
+            }
+            return 0;
+        };
+        return getZoneValue(a) - getZoneValue(b);
+    });
+
+    // 모든 중량 값 수집 및 정렬
+    const allWeights = new Set();
+    allZones.forEach(zone => {
+        expressData[zone].forEach(item => allWeights.add(item.weight));
+    });
+    const sortedWeights = Array.from(allWeights).sort((a, b) => a - b);
+
+    // 테이블 HTML 생성
+    let tableHTML = `
+        <div class="rates-table-wrapper">
+            <table class="rates-table">
+                <thead>
+                    <tr>
+                        <th>중량 (kg)</th>`;
+
+    allZones.forEach(zone => {
+        tableHTML += `
+                        <th class="zone-header" onclick="showZoneCountries('${zone}')" title="클릭하여 국가 목록 보기">
+                            ${zone}<br><span style="font-size: 10px;">🔍</span>
+                        </th>`;
+    });
+
+    tableHTML += `
+                    </tr>
+                </thead>
+                <tbody>`;
+
+    sortedWeights.forEach(weight => {
+        tableHTML += `<tr><td>${weight.toFixed(1)}</td>`;
+        allZones.forEach(zone => {
+            const item = expressData[zone].find(d => d.weight === weight);
+            tableHTML += item ? `<td class="price-cell">${item.price.toLocaleString()}원</td>` : `<td>-</td>`;
+        });
+        tableHTML += `</tr>`;
+    });
+
+    tableHTML += `
+                </tbody>
+            </table>
+        </div>`;
+
+    container.innerHTML = tableHTML;
+}
+
 // --- 페이지 로드 시 초기화 ---
 window.addEventListener('DOMContentLoaded', function() {
     // eGS 탭이 활성화될 때 Standard 테이블 렌더링
     const egsTabLink = document.querySelector('.tab-link[onclick*="egsRates"]');
     if (egsTabLink) {
         egsTabLink.addEventListener('click', function() {
-            // 약간의 지연을 두고 렌더링 (탭 전환 애니메이션 이후)
             setTimeout(renderStandardTable, 100);
         });
     }
     
-    // 검색 입력창에서 Enter 키 처리
+    // Standard 검색 입력창에서 Enter 키 처리
     const searchInput = document.getElementById('countrySearchInput');
     if (searchInput) {
         searchInput.addEventListener('keypress', function(e) {
@@ -250,18 +464,31 @@ window.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // ⭐ Express 검색 입력창에서 Enter 키 처리
+    const expressSearchInput = document.getElementById('expressCountrySearchInput');
+    if (expressSearchInput) {
+        expressSearchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchExpressCountryRate();
+            }
+        });
+    }
 });
 
 // --- 데이터 업데이트 시 테이블 갱신 ---
-// main.js에서 파일 업로드 성공 시 호출될 수 있도록 전역 함수로 노출
 window.updateEgsRatesTables = function() {
-    // 현재 eGS 탭이 활성화되어 있고 Standard 서브탭이 활성화되어 있다면 갱신
     const egsTab = document.getElementById('egsRates');
     const standardSubTab = document.getElementById('egsStandard');
+    const expressSubTab = document.getElementById('egsExpress');
     
-    if (egsTab.classList.contains('active') && standardSubTab.classList.contains('active')) {
-        renderStandardTable();
+    if (egsTab.classList.contains('active')) {
+        if (standardSubTab.classList.contains('active')) {
+            renderStandardTable();
+        } else if (expressSubTab.classList.contains('active')) {
+            renderExpressTable();
+        }
     }
 };
 
-console.log("eGS Rates script loaded with search and table rendering logic.");
+console.log("✅ eGS Rates script loaded with Express support.");
