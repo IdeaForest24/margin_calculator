@@ -1,6 +1,5 @@
 // js/margin-calculator.js
 
-// --- Calculator Constants ---
 const ebayCategories = {
     'most_categories': { name: '대부분 카테고리 (일반)', noStore: { rate: 13.6, threshold: 7500, overRate: 2.35 }, withStore: { rate: 12.7, threshold: 2500, overRate: 2.35 } },
     'books_movies_music': { name: '도서/영화/음악', noStore: { rate: 15.3, threshold: 7500, overRate: 2.35 }, withStore: { rate: 15.3, threshold: 2500, overRate: 2.35 } },
@@ -15,9 +14,6 @@ const ebayCategories = {
     'nft_categories': { name: 'NFT 카테고리', noStore: { rate: 5.0 }, withStore: { rate: 5.0 } }
 };
 
-const destinations = { US: '미국', CA: '캐나다', GB: '영국', DE: '독일', FR: '프랑스', IT: '이탈리아', ES: '스페인', EU: '기타 유럽 (독일 요금)', AU: '호주' };
-
-// --- UI Interaction Functions ---
 function toggleAdInput() {
     const adEnabled = document.getElementById('adEnabled').checked;
     const adRateInput = document.getElementById('adRate');
@@ -27,26 +23,20 @@ function toggleAdInput() {
     }
 }
 
-// ===================================
-// ===== 계산 로직 헬퍼 함수 =====
-// ===================================
-
-/** 현재 UI에서 선택된 최종 목적지 국가 코드를 가져오는 함수 */
+// 현재 UI에서 선택된 최종 목적지 국가 코드 가져오기
 function getSelectedDestination() {
     if (currentServiceType === 'standard') {
         const primary = document.getElementById('destinationPrimary').value;
         if (primary === 'EU_GROUP') {
-            // '기타 유럽' 선택 시 2차 선택 박스의 값을 반환
-            // '기타 유럽'은 독일 요금을 따르므로, 국가를 선택 안했으면 'DE'를 기본값으로 사용
             return document.getElementById('destinationSecondary').value || 'DE';
         }
-        return primary; // 주요 국가 선택 시 해당 값 반환
-    } else { // express
+        return primary;
+    } else {
         return document.getElementById('zoneSecondary').value;
     }
 }
 
-/** 국가 코드로 Express Zone을 찾는 함수 */
+// 국가 코드로 Express Zone 찾기
 function findZoneByCountryCode(countryCode) {
     if (!egsRatesData || !egsRatesData.expressZones || !countryCode) return null;
 
@@ -58,8 +48,6 @@ function findZoneByCountryCode(countryCode) {
     return null;
 }
 
-
-// --- Core Calculation Logic ---
 function calculateEgsShipping(targetWeight, destinationCode) {
     if (!egsRatesData) return 0;
 
@@ -73,7 +61,7 @@ function calculateEgsShipping(targetWeight, destinationCode) {
             alert(`[Express] '${destinationCode}' 국가의 Zone 정보를 찾을 수 없습니다. 운임표를 확인해주세요.`);
             return 0;
         }
-        lookupKey = zone; // 조회 키를 Zone으로 변경
+        lookupKey = zone;
     }
     
     if (!egsRatesData[service] || !egsRatesData[service][lookupKey]) return 0;
@@ -81,13 +69,11 @@ function calculateEgsShipping(targetWeight, destinationCode) {
     rates = egsRatesData[service][lookupKey];
     if (!rates || rates.length === 0) return 0;
 
-    // ✨ 중요: 운임 데이터를 무게순으로 정렬하여 정확한 구간을 찾도록 보장
     const sortedRates = [...rates].sort((a, b) => a.weight - b.weight);
 
     const exactMatch = sortedRates.find(rate => rate.weight === targetWeight);
     if (exactMatch) return exactMatch.price;
     
-    // 정렬된 데이터를 기반으로 다음으로 높은 무게 구간을 찾음
     const nextHigher = sortedRates.find(rate => rate.weight > targetWeight);
     if (nextHigher) return nextHigher.price;
 
@@ -172,14 +158,12 @@ function findTargetSellingPrice(totalCostUSD, targetMarginRate, category, hasSto
     return bestPrice;
 }
 
-// --- Main Calculation Function ---
 function calculateMargin() {
     if (!egsRatesData) {
         alert('⚠️ 운임표를 먼저 업로드해주세요!');
         return;
     }
 
-    // 1. UI에서 현재 선택된 최종 목적지 국가 코드를 가져옴
     const destination = getSelectedDestination();
 
     const productCost = document.getElementById('productCost').value;
@@ -203,7 +187,12 @@ function calculateMargin() {
     const finalWeight = getFinalWeight();
     const egsShippingCost = calculateEgsShipping(finalWeight, destination);
     
-    const destinationName = destinations[destination] || getCountryName(destination) || (findZoneByCountryCode(destination) ? `Zone ${findZoneByCountryCode(destination)}` : destination);
+    // country-data.js 활용으로 통합
+    const destinationName = ENGLISH_TO_KOREAN_MAP[getCountryName(destination)] || 
+                            getCountryName(destination) || 
+                            (findZoneByCountryCode(destination) ? 
+                             `Zone ${findZoneByCountryCode(destination)}` : 
+                             destination);
 
     if (egsShippingCost === 0 && finalWeight > 0) {
         alert(`⚠️ ${destinationName} (${finalWeight.toFixed(2)}kg)에 대한 배송비 정보가 없습니다. 운임표를 확인해주세요.`);
@@ -264,8 +253,6 @@ function calculateMargin() {
     });
 }
 
-
-// --- Modal Control Functions ---
 function openResultModal() {
     const modal = document.getElementById('resultModal');
     modal.classList.add('show');
@@ -278,14 +265,12 @@ function closeResultModal() {
     document.body.style.overflow = 'auto';
 }
 
-// ESC 키로 모달 닫기
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         closeResultModal();
     }
 });
 
-// 모달 배경 클릭 시 닫기
 document.addEventListener('click', function(event) {
     const modal = document.getElementById('resultModal');
     if (event.target === modal) {
@@ -293,8 +278,6 @@ document.addEventListener('click', function(event) {
     }
 });
 
-
-// --- Display Results in Modal ---
 function displayResultsInModal(results) {
     const modalContent = document.getElementById('modalResultContent');
 
@@ -302,7 +285,6 @@ function displayResultsInModal(results) {
         ? '⚡ eGS Express' 
         : '🚛 eGS Standard';
     
-    // 광고비 박스 HTML (조건부)
     const adStepHTML = results.adEnabled && results.adRate > 0 ? `
         <div class="flow-arrow">→</div>
         <div class="flow-step">
@@ -317,9 +299,7 @@ function displayResultsInModal(results) {
     ` : '';
     
     const modalHTML = `
-        <!-- 가로 Flow 레이아웃 -->
         <div class="horizontal-flow">
-            <!-- Step 1: 판매가 -->
             <div class="flow-step">
                 <div class="flow-step-header">💵 ebay 판매가</div>
                 <div class="flow-step-content">
@@ -332,7 +312,6 @@ function displayResultsInModal(results) {
 
             <div class="flow-arrow">→</div>
 
-            <!-- Step 2: ebay 수수료 -->
             <div class="flow-step">
                 <div class="flow-step-header">📉 ebay 수수료</div>
                 <div class="flow-step-content">
@@ -365,7 +344,6 @@ function displayResultsInModal(results) {
 
             <div class="flow-arrow">→</div>
 
-            <!-- Step 3: ebay 정산 -->
             <div class="flow-step">
                 <div class="flow-step-header">💰 ebay 정산</div>
                 <div class="flow-step-content">
@@ -378,7 +356,6 @@ function displayResultsInModal(results) {
 
             <div class="flow-arrow">→</div>
 
-            <!-- Step 4: Payoneer 수수료 -->
             <div class="flow-step">
                 <div class="flow-step-header">📉 Payoneer 수수료</div>
                 <div class="flow-step-content">
@@ -399,7 +376,6 @@ function displayResultsInModal(results) {
 
             <div class="flow-arrow">→</div>
 
-            <!-- Step 5: Payoneer 정산 -->
             <div class="flow-step">
                 <div class="flow-step-header">💵 Payoneer 정산</div>
                 <div class="flow-step-content">
@@ -416,7 +392,6 @@ function displayResultsInModal(results) {
 
             <div class="flow-arrow">→</div>
 
-            <!-- Step 6: 원가 차감 -->
             <div class="flow-step">
                 <div class="flow-step-header">📦 원가 차감</div>
                 <div class="flow-step-content">
@@ -445,7 +420,6 @@ function displayResultsInModal(results) {
 
             <div class="flow-arrow final">→</div>
 
-            <!-- Step 7: 최종 수익 -->
             <div class="flow-step highlight">
                 <div class="flow-step-header">🎯 최종 결과</div>
                 <div class="flow-step-content">
@@ -466,13 +440,12 @@ function displayResultsInModal(results) {
             </div>
         </div>
 
-        <!-- 설정 정보 -->
         <div class="settings-info-section">
             <div class="settings-info-header">⚙️ 계산 설정 정보</div>
             <div class="settings-grid">
                 <div class="setting-item">
                     <span class="setting-label">목적지:</span>
-                    <span class="setting-value">${destinations[results.destination] || getCountryName(results.destination)}</span>
+                    <span class="setting-value">${ENGLISH_TO_KOREAN_MAP[getCountryName(results.destination)] || getCountryName(results.destination)}</span>
                 </div>
                 <div class="setting-item">
                     <span class="setting-label">과금 중량:</span>
