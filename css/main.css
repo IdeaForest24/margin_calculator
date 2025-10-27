@@ -1,4 +1,4 @@
-/* --- Global & Layout Styles --- */
+/* 전역 스타일 */
 * {
     margin: 0;
     padding: 0;
@@ -68,12 +68,7 @@ input:focus, select:focus {
     display: none !important;
 }
 
-.text-red { color: #dc2626; }
-.text-green { color: #16a34a; }
-.text-blue { color: #2563eb; }
-.text-gray { color: #6b7280; }
-
-/* --- Tab Styles --- */
+/* 탭 스타일 */
 .tabs {
     display: flex;
     border-bottom: 2px solid #e5e7eb;
