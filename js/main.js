@@ -1,15 +1,11 @@
 // js/main.js
 
-// --- Global Variables & Initial Setup ---
+// 전역 상태
 let currentExchangeRate = 1300;
 let egsRatesData = null;
 let currentServiceType = 'standard';
 
-// ==========================================
-// ===== 목적지 UI 동적 생성 및 관리 함수 =====
-// ==========================================
-
-/** eGS 데이터 로드 후 목적지 선택 UI를 초기화하고 채우는 함수 */
+// eGS 데이터 기반 목적지 드롭다운 초기화
 function updateDestinationUI() {
     if (!egsRatesData) {
         console.warn("eGS 데이터가 없어 목적지 UI를 업데이트할 수 없습니다.");
@@ -19,14 +15,13 @@ function updateDestinationUI() {
     populateExpressDestinations();
 }
 
-/** Standard 서비스 목적지 드롭다운을 채우는 함수 */
+// Standard 서비스 목적지 드롭다운
 function populateStandardDestinations() {
     const primarySelect = document.getElementById('destinationPrimary');
     const secondarySelect = document.getElementById('destinationSecondary');
-    primarySelect.innerHTML = ''; // 초기화
+    primarySelect.innerHTML = '';
     secondarySelect.innerHTML = '<option value="">국가 선택</option>';
 
-    // 1. 주요 국가 목록 (고정)
     const primaryCountries = {
         'US': '미국', 'CA': '캐나다', 'GB': '영국', 'DE': '독일',
         'IT': '이탈리아', 'FR': '프랑스', 'ES': '스페인', 'AU': '호주'
@@ -34,9 +29,8 @@ function populateStandardDestinations() {
     Object.entries(primaryCountries).forEach(([code, name]) => {
         primarySelect.add(new Option(name, code));
     });
-    primarySelect.add(new Option('기타 유럽', 'EU_GROUP')); // 그룹 선택 옵션
+    primarySelect.add(new Option('기타 유럽', 'EU_GROUP'));
 
-    // 2. '기타 유럽' 국가 목록 (동적)
     const europeExclusions = ['GB', 'DE', 'IT', 'FR', 'ES'];
     if (egsRatesData && egsRatesData.standard) {
         Object.keys(egsRatesData.standard)
@@ -47,7 +41,6 @@ function populateStandardDestinations() {
             });
     }
 
-    // 3. 1차 선택 시 2차 활성화 이벤트 연결
     primarySelect.onchange = function() {
         const isEuropeGroup = this.value === 'EU_GROUP';
         secondarySelect.disabled = !isEuropeGroup;
@@ -57,7 +50,7 @@ function populateStandardDestinations() {
     };
 }
 
-/** Express 서비스 Zone 및 국가 드롭다운을 채우는 함수 */
+// Express 서비스 Zone 및 국가 드롭다운
 function populateExpressDestinations() {
     const zoneSelect = document.getElementById('zonePrimary');
     const countrySelect = document.getElementById('zoneSecondary');
@@ -67,7 +60,6 @@ function populateExpressDestinations() {
 
     if (!egsRatesData || !egsRatesData.express || !egsRatesData.expressZones) return;
 
-    // 1. Zone 목록 정렬 및 추가
     const sortedZones = Object.keys(egsRatesData.express).sort((a, b) => {
         const valA = a.replace('D-', 'D').replace('-', '.');
         const valB = b.replace('D-', 'D').replace('-', '.');
@@ -75,7 +67,6 @@ function populateExpressDestinations() {
     });
     sortedZones.forEach(zone => zoneSelect.add(new Option(`Zone ${zone}`, zone)));
 
-    // 2. Zone 선택 시 국가 목록 변경 이벤트 연결
     zoneSelect.onchange = function() {
         countrySelect.innerHTML = '<option value="">국가 선택</option>';
         const selectedZone = this.value;
@@ -94,8 +85,6 @@ function populateExpressDestinations() {
     };
 }
 
-
-// --- DOMContentLoaded Event Listener ---
 window.addEventListener('DOMContentLoaded', function() {
     fetchExchangeRate();
     loadSavedRatesData();
@@ -103,7 +92,6 @@ window.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
 });
 
-// --- Event Listener Setup ---
 function setupEventListeners() {
     const tabLinks = document.querySelectorAll('.tab-link');
     tabLinks.forEach(link => {
@@ -132,7 +120,6 @@ function setupEventListeners() {
     }
 }
 
-// --- Tab Management ---
 function openTab(event, tabName) {
     const tabContents = document.querySelectorAll('.tab-content');
     tabContents.forEach(content => content.classList.remove('active'));
@@ -144,7 +131,6 @@ function openTab(event, tabName) {
     document.querySelector(`.tab-link[onclick*="'${tabName}'"]`).classList.add('active');
 }
 
-// --- Common Utility Functions ---
 function showUploadStatus(message, type) {
     const statusDiv = document.getElementById('uploadStatus');
     statusDiv.textContent = message;
@@ -192,16 +178,14 @@ function updateManualExchangeRate(value) {
     }
 }
 
-// --- LocalStorage Data Management ---
 function loadSavedRatesData() {
-    // egs-utils.js에 정의된 loadRatesData 함수 사용
-    const loadedData = loadRatesData(); 
+    const loadedData = loadRatesData();
     
     if (loadedData) {
         egsRatesData = loadedData;
         const lastUpdate = localStorage.getItem('egsRatesLastUpdate');
         showUploadStatus(`✅ 저장된 운임표 로드됨 (${new Date(lastUpdate).toLocaleDateString()})`, 'success');
-        updateDestinationUI(); // UI 업데이트 함수 호출
+        updateDestinationUI();
     } else {
         showUploadStatus('⚠️ 운임표를 업로드해주세요. 계산이 불가능합니다.', 'info');
     }
@@ -209,12 +193,10 @@ function loadSavedRatesData() {
 
 function clearSavedRatesData() {
     if (confirm('정말로 저장된 운임표 데이터를 삭제하시겠습니까?')) {
-        localStorage.removeItem('egsRatesData');
-        localStorage.removeItem('egsRatesLastUpdate');
+        clearRatesData();
         egsRatesData = null;
         showUploadStatus('✅ 저장된 운임표 데이터가 삭제되었습니다.', 'success');
         
-        // eGS 운임표 테이블 갱신
         if (typeof window.updateEgsRatesTables === 'function') {
             window.updateEgsRatesTables();
         }
@@ -225,7 +207,6 @@ function clearSavedRatesData() {
     }
 }
 
-// --- Drag and Drop & File Upload ---
 function setupDragAndDrop() {
     const uploadSection = document.getElementById('uploadSection');
     if (!uploadSection) return;
@@ -260,7 +241,6 @@ function handleFileUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    // 파일 타입 검사는 그대로 유지
     if (!['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'application/csv'].includes(file.type)) {
         showUploadStatus('❌ Excel 또는 CSV 파일만 업로드 가능합니다 (.xlsx, .xls, .csv)', 'error');
         return;
@@ -273,23 +253,17 @@ function handleFileUpload(event) {
         try {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
-            
-            // egs-utils.js에 새로 정의된 파서 함수 호출
             const parsedData = parseExcelWorkbook(workbook);
             
             if (parsedData && (Object.keys(parsedData.standard).length > 0 || Object.keys(parsedData.express).length > 0)) {
                 egsRatesData = parsedData;
-                
-                // localStorage에 저장하는 로직은 egs-utils.js의 함수를 사용하도록 변경 가능
-                saveRatesData(parsedData); // saveRatesData는 egs-utils.js에 있어야 합니다.
-                
+                saveRatesData(parsedData);
                 showUploadStatus(`✅ 운임표 업로드 완료! (${Object.keys(parsedData.standard).length}개 Standard 국가, ${Object.keys(parsedData.express).length}개 Express Zone)`, 'success');
                 
-                // eGS 운임표 탭이 열려있으면 테이블 즉시 갱신
                 if (typeof window.updateEgsRatesTables === 'function') {
                     window.updateEgsRatesTables();
                 }
-                updateDestinationUI(); // UI 업데이트 함수 호출
+                updateDestinationUI();
             } else {
                 showUploadStatus('❌ 유효한 eGS 운임 데이터를 찾지 못했습니다. 파일 형식을 확인해주세요.', 'error');
             }
@@ -302,13 +276,11 @@ function handleFileUpload(event) {
     reader.readAsArrayBuffer(file);
 }
 
-// --- UI Interaction Functions ---
 function toggleServiceType(type) {
     currentServiceType = type;
     document.querySelectorAll('.service-type-option').forEach(option => option.classList.remove('active'));
     document.querySelector(`.service-type-option[data-type="${type}"]`).classList.add('active');
     
-    // 목적지 UI 전환
     const standardWrapper = document.getElementById('standardDestinationWrapper');
     const expressWrapper = document.getElementById('expressDestinationWrapper');
     
@@ -348,13 +320,11 @@ function getFinalWeight() {
     return Math.max(actualWeight, calculateVolumetricWeight());
 }
 
-// --- Help Modal Functions ---
 function openHelpModal() {
     const modal = document.getElementById('helpModal');
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
     
-    // 수수료 체계 iframe 로드
     const iframe = document.getElementById('feesIframe');
     if (!iframe.src) {
         iframe.src = 'js/ebay-fee-structure.html';
@@ -368,11 +338,9 @@ function closeHelpModal() {
 }
 
 function switchHelpTab(tabName) {
-    // 탭 버튼 활성화
     document.querySelectorAll('.help-tab-btn').forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
     
-    // 탭 콘텐츠 표시
     document.querySelectorAll('.help-tab-content').forEach(content => {
         content.style.display = 'none';
     });
@@ -384,14 +352,12 @@ function switchHelpTab(tabName) {
     }
 }
 
-// ESC 키로 모달 닫기
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         closeHelpModal();
     }
 });
 
-// 모달 배경 클릭 시 닫기
 document.addEventListener('click', function(event) {
     const helpModal = document.getElementById('helpModal');
     if (event.target === helpModal) {
