@@ -618,3 +618,41 @@ li { margin-bottom: 8px; font-size: 14px; }
         padding: 20px;
     }
 }
+
+/* 목적지 2단계 선택 그리드 */
+.destination-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* 비활성화된 select 요소 스타일 */
+select:disabled {
+    background-color: #f3f4f6;
+    cursor: not-allowed;
+    color: #9ca3af;
+}
+
+@media (max-width: 768px) {
+    .destination-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* UI 레이아웃 수정을 위한 특별 그리드 */
+.form-grid-special {
+    display: grid;
+    grid-template-columns: 2fr 1fr; /* 2:1 비율로 컬럼 분할 */
+    gap: 16px;
+    align-items: end; /* 요소들을 하단에 정렬 */
+}
+
+.form-grid-special .form-group.span-two {
+    grid-column: span 1; /* span-two 클래스가 있어도 1칸만 차지하도록 */
+}
+
+@media (max-width: 1024px) {
+    .form-grid-special {
+        grid-template-columns: 1fr; /* 화면이 작아지면 1열로 변경 */
+    }
+}
