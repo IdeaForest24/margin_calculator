@@ -1,4 +1,4 @@
-/* --- eGS Rates Tab Specific Styles --- */
+/* eGS 운임표 탭 전용 스타일 */
 
 .egs-rates-header {
     margin-bottom: 24px;
@@ -15,7 +15,7 @@
     color: #6b7280;
 }
 
-/* --- eGS 서브탭 스타일 --- */
+/* eGS 서브탭 */
 .egs-subtabs {
     display: flex;
     border-bottom: 2px solid #e5e7eb;
@@ -54,7 +54,7 @@
     display: block;
 }
 
-/* --- 검색 영역 스타일 --- */
+/* 검색 영역 */
 .country-search-section {
     background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
     border: 2px solid #3b82f6;
@@ -120,7 +120,7 @@
     color: #6b7280;
 }
 
-/* --- 검색 결과 모달 스타일 --- */
+/* 검색 결과 모달 */
 .search-modal {
     display: none;
     position: fixed;
@@ -243,7 +243,7 @@
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
-/* --- 국가별 운임표 테이블 --- */
+/* 국가별 운임표 테이블 */
 .country-rate-table {
     width: 100%;
     border-collapse: collapse;
@@ -290,10 +290,10 @@
     color: #1f2937;
 }
 
-/* --- 운임표 테이블 스타일 --- */
+/* 운임표 테이블 */
 .rates-table-wrapper {
     overflow-x: auto;
-    overflow-y: auto; /* 세로 스크롤 추가 */
+    overflow-y: auto;
     margin: 24px 0;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -309,7 +309,7 @@
 .rates-table thead {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    position: sticky; /* 스크롤 시 헤더 고정 */
+    position: sticky;
     top: 0;
     z-index: 10;
 }
@@ -332,7 +332,7 @@
     border-right: none;
 }
 
-/* ⭐ Zone 헤더 호버 스타일 (신규) */
+/* Zone 헤더 호버 스타일 */
 .zone-header {
     transition: all 0.2s ease;
     cursor: pointer;
@@ -387,19 +387,19 @@
 .rates-table tbody td.price-cell {
     color: #1d4ed8;
     font-weight: 500;
-    white-space: nowrap; /* '원' 글자 줄바꿈 방지 */
+    white-space: nowrap;
 }
 
-/* --- 운임표 테이블 세로 스크롤 높이 제한 (신규 추가) --- */
+/* 운임표 테이블 세로 스크롤 높이 제한 */
 #standardTableContainer .rates-table-wrapper {
-    max-height: 670px; /* 헤더 + 1.5kg 행까지 보이도록 설정 */
+    max-height: 670px;
 }
 
 #expressTableContainer .rates-table-wrapper {
-    max-height: 800px; /* 헤더 + 8.0kg 행까지 보이도록 설정 */
+    max-height: 800px;
 }
 
-/* --- No Data 메시지 --- */
+/* No Data 메시지 */
 .no-data-message {
     text-align: center;
     padding: 60px 20px;
@@ -419,7 +419,6 @@
     color: #9ca3af;
 }
 
-/* --- Placeholder Section --- */
 .placeholder-section {
     padding: 40px;
     text-align: center;
@@ -440,7 +439,7 @@
     color: #6b7280;
 }
 
-/* --- 반응형 디자인 --- */
+/* 반응형 */
 @media (max-width: 768px) {
     .rates-table-wrapper {
         border-radius: 8px;
