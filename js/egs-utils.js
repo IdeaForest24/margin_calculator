@@ -1,14 +1,12 @@
 // js/egs-utils.js
-// eGS 운임표 관련 데이터 파싱 및 공통 유틸리티 함수
+// eGS 운임표 관련 데이터 파싱 및 공통 유틸리티
 
-// ========================================
-// Excel 파싱 메인 함수
-// ========================================
+// Excel 워크북 파싱: Standard, Express, Zone 매핑 추출
 function parseExcelWorkbook(workbook) {
     const result = {
         standard: {},
         express: {},
-        expressZones: {}  // ⭐ Express Zone-국가 매핑 추가
+        expressZones: {}
     };
 
     workbook.SheetNames.forEach(sheetName => {
@@ -42,7 +40,7 @@ function parseExcelWorkbook(workbook) {
                 case 'Express':
                     Object.assign(result.express, parseExpress(data));
                     break;
-                case 'Express_Zones':  // ⭐ Zone 매핑 시트 추가
+                case 'Express_Zones':
                     result.expressZones = parseExpressZoneMapping(data);
                     break;
                 default:
@@ -60,13 +58,9 @@ function parseExcelWorkbook(workbook) {
     return result;
 }
 
-// ========================================
-// 시트 타입 식별 함수
-// ========================================
 function identifySheetType(sheetName, data) {
     const name = sheetName.toLowerCase();
     
-    // Express Zone 매핑 시트 식별
     if (name.includes('express') && name.includes('service') && name.includes('zone')) {
         return 'Express_Zones';
     }
@@ -90,10 +84,6 @@ function identifySheetType(sheetName, data) {
     }
     return 'ignore';
 }
-
-// ========================================
-// 시트별 상세 파서
-// ========================================
 
 const cleanNumber = (val) => {
     if (typeof val === 'number') return val;
@@ -175,10 +165,9 @@ function parseStandardEU(data) {
     return results;
 }
 
-// ⭐ Express 파싱 - 최종 수정 버전
 function parseExpress(data) {
     const results = {};
-    const headerRowIndex = 3; // Row 4 = index 3
+    const headerRowIndex = 3;
     
     console.log(`  -> Express 파싱 시작. 총 ${data.length}개 행 데이터`);
     
@@ -190,28 +179,23 @@ function parseExpress(data) {
     const headerRow = data[headerRowIndex];
     console.log(`  -> 헤더 행 데이터 (처음 10개):`, headerRow.slice(0, 10));
     
-    // ⭐ Zone 헤더 추출 (Col 3부터 = index 2부터 - Zone A 포함!)
     const zoneColumns = [];
-    const zonePattern = /^[A-Z](-\d)?$/; // A, E, D-1, D-2 등
+    const zonePattern = /^[A-Z](-\d)?$/;
     
-    for (let col = 2; col < headerRow.length; col++) {  // ⭐ col 2부터 시작 (Zone A 포함)
+    for (let col = 2; col < headerRow.length; col++) {
         const cellValue = headerRow[col];
         
-        // 빈 값 건너뛰기
         if (!cellValue && cellValue !== 0) continue;
         
-        // 문자열로 변환 (안전하게)
         let zoneName = '';
         if (typeof cellValue === 'string') {
             zoneName = cellValue.trim();
         } else if (typeof cellValue === 'number') {
             zoneName = cellValue.toString().trim();
         } else {
-            // 다른 타입은 건너뛰기
             continue;
         }
         
-        // Zone 패턴 매칭
         if (zoneName && zonePattern.test(zoneName)) {
             zoneColumns.push({ col, zone: zoneName });
             results[zoneName] = [];
@@ -226,18 +210,16 @@ function parseExpress(data) {
         return {};
     }
     
-    // ⭐ 중량별 운임 파싱 (Row 6부터 = index 5부터)
     let successCount = 0;
     for (let row = 5; row < data.length; row++) {
         const rowData = data[row];
         if (!rowData || rowData.length < 3) continue;
         
-        const weightValue = rowData[0]; // ⭐ Col A = index 0 (중량은 A열!)
+        const weightValue = rowData[0];
         const weight = cleanNumber(weightValue);
         
         if (isNaN(weight) || weight <= 0) {
-            // 중량이 유효하지 않으면 데이터 끝으로 판단
-            if (row > 10) break;  // 처음 10행 이후라면 중단
+            if (row > 10) break;
             continue;
         }
         
@@ -260,7 +242,6 @@ function parseExpress(data) {
     
     console.log(`  -> Express 파싱 완료. ${successCount}개 중량 구간, ${Object.keys(results).length}개 Zone 데이터.`);
     
-    // 각 Zone별 데이터 수 출력
     Object.keys(results).slice(0, 5).forEach(zone => {
         console.log(`     Zone ${zone}: ${results[zone].length}개 데이터`);
     });
@@ -268,13 +249,11 @@ function parseExpress(data) {
     return results;
 }
 
-// ⭐ Express Zone-국가 매핑 파싱
 function parseExpressZoneMapping(data) {
     const zoneMap = {};
     
     console.log(`  -> Express Zone 매핑 파싱 시작. 총 ${data.length}개 행 데이터`);
     
-    // Row 3부터 시작 (index 2) - Row 2는 헤더
     for (let i = 2; i < data.length; i++) {
         const row = data[i];
         if (!row || row.length < 3) continue;
@@ -285,7 +264,6 @@ function parseExpressZoneMapping(data) {
         
         if (!countryValue || !zoneValue) continue;
         
-        // 문자열로 안전하게 변환
         const country = String(countryValue).trim();
         const code = codeValue ? String(codeValue).trim() : '';
         const zone = String(zoneValue).trim();
@@ -325,9 +303,6 @@ function findRowContaining(data, keyword, columnIndex = -1) {
     return -1;
 }
 
-// ========================================
-// LocalStorage 관리 함수
-// ========================================
 function saveRatesData(data) {
     try {
         if (!data || !data.standard || Object.keys(data.standard).length === 0) {
@@ -368,9 +343,6 @@ function clearRatesData() {
     }
 }
 
-// ========================================
-// 국가 관련 유틸리티
-// ========================================
 function getCountryName(code) {
     const countryNames = {
         'US': '미국', 'CA': '캐나다', 'GB': '영국', 'AU': '호주', 'DE': '독일', 'FR': '프랑스', 'IT': '이탈리아', 'ES': '스페인', 'BE': '벨기에', 'NL': '네덜란드', 'AT': '오스트리아', 'PL': '폴란드', 'SE': '스웨덴', 'DK': '덴마크', 'FI': '핀란드', 'IE': '아일랜드', 'PT': '포르투갈', 'CZ': '체코', 'HU': '헝가리', 'GR': '그리스', 'RO': '루마니아', 'BG': '불가리아', 'HR': '크로아티아', 'SK': '슬로바키아', 'SI': '슬로베니아', 'LT': '리투아니아', 'LV': '라트비아', 'EE': '에스토니아', 'CY': '키프로스', 'LU': '룩셈부르크', 'MT': '몰타', 'EU': '기타 유럽'
@@ -380,7 +352,6 @@ function getCountryName(code) {
 
 function getCountrySearchMap() {
     return {
-        // 주요 8개국
         'US': 'US', '미국': 'US', 'USA': 'US', 'UNITED STATES': 'US', 'AMERICA': 'US',
         'CA': 'CA', '캐나다': 'CA', 'CANADA': 'CA',
         'GB': 'GB', '영국': 'GB', 'UK': 'GB', 'UNITED KINGDOM': 'GB', 'BRITAIN': 'GB',
@@ -389,8 +360,6 @@ function getCountrySearchMap() {
         'FR': 'FR', '프랑스': 'FR', 'FRANCE': 'FR',
         'ES': 'ES', '스페인': 'ES', 'SPAIN': 'ES',
         'AU': 'AU', '호주': 'AU', 'AUSTRALIA': 'AU',
-        
-        // 유럽 기타 국가들
         'BE': 'BE', '벨기에': 'BE', 'BELGIUM': 'BE',
         'CZ': 'CZ', '체코': 'CZ', 'CZECH': 'CZ', 'CZECHIA': 'CZ',
         'HU': 'HU', '헝가리': 'HU', 'HUNGARY': 'HU',
@@ -415,35 +384,6 @@ function getCountrySearchMap() {
         'SK': 'SK', '슬로바키아': 'SK', 'SLOVAKIA': 'SK',
         'SI': 'SI', '슬로베니아': 'SI', 'SLOVENIA': 'SI'
     };
-}
-
-// ========================================
-// 운임 조회 함수
-// ========================================
-function getShippingRate(countryCode, weight, serviceType = 'standard') {
-    if (!egsRatesData || !egsRatesData[serviceType]) {
-        console.error('운임표 데이터가 없습니다');
-        return null;
-    }
-    
-    const countryData = egsRatesData[serviceType][countryCode];
-    if (!countryData || countryData.length === 0) {
-        console.error(`${countryCode} 국가의 운임 데이터가 없습니다`);
-        return null;
-    }
-    
-    const sorted = [...countryData].sort((a, b) => a.weight - b.weight);
-    const nextHigher = sorted.find(item => item.weight >= weight);
-
-    if (nextHigher) {
-        return nextHigher.price;
-    }
-
-    if (sorted.length > 0) {
-        return sorted[sorted.length - 1].price;
-    }
-    
-    return null;
 }
 
 console.log('✅ eGS Utils script loaded successfully with Enhanced Express parsing.');
