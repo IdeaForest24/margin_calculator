@@ -89,9 +89,37 @@
                     <!-- 하단: ebay 판매 정보 (전체 너비) -->
                     <div class="section green">
                         <div class="section-header green">🌍 ebay 판매 정보</div>
-                        <div class="form-grid">
-                            <div class="form-group"><label for="destination">목적지 *</label><select id="destination"><option value="">선택</option><option value="US">미국</option><option value="CA">캐나다</option><option value="GB">영국</option><option value="DE">독일</option><option value="FR">프랑스</option><option value="IT">이탈리아</option><option value="ES">스페인</option><option value="EU">기타 유럽</option><option value="AU">호주</option></select></div>
-                            <div class="form-group"><label for="category">ebay 카테고리 *</label><select id="category"><option value="">선택</option><option value="most_categories">대부분 카테고리</option><option value="books_movies_music">도서/영화/음악</option><option value="womens_bags">여성용 가방</option><option value="athletic_shoes">운동화</option><option value="jewelry_watches">보석/시계</option><option value="watches_parts">시계/부품</option><option value="coins_paper_money">동전/지폐</option><option value="bullion">금괴/귀금속</option><option value="guitars_basses">악기(기타/베이스)</option><option value="trading_cards">트레이딩 카드</option><option value="nft_categories">NFT</option></select></div>
+                        <div class="form-grid-special">
+                            <div class="form-group span-two">
+                                <label for="destinationPrimary">목적지 *</label>
+                                <!-- Standard 배송 UI -->
+                                <div id="standardDestinationWrapper" class="destination-grid">
+                                    <select id="destinationPrimary"></select>
+                                    <select id="destinationSecondary" disabled></select>
+                                </div>
+                                <!-- Express 배송 UI (초기에는 숨김) -->
+                                <div id="expressDestinationWrapper" class="destination-grid hidden">
+                                    <select id="zonePrimary"></select>
+                                    <select id="zoneSecondary" disabled></select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="category">ebay 카테고리 *</label>
+                                <select id="category">
+                                    <option value="">선택</option>
+                                    <option value="most_categories">대부분 카테고리</option>
+                                    <option value="books_movies_music">도서/영화/음악</option>
+                                    <option value="womens_bags">여성용 가방</option>
+                                    <option value="athletic_shoes">운동화</option>
+                                    <option value="jewelry_watches">보석/시계</option>
+                                    <option value="watches_parts">시계/부품</option>
+                                    <option value="coins_paper_money">동전/지폐</option>
+                                    <option value="bullion">금괴/귀금속</option>
+                                    <option value="guitars_basses">악기(기타/베이스)</option>
+                                    <option value="trading_cards">트레이딩 카드</option>
+                                    <option value="nft_categories">NFT</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="form-grid" style="margin-top: 16px;">
                             <div class="form-group"><label for="storeType">ebay 스토어 구독</label><select id="storeType"><option value="none">없음/Starter</option><option value="basic">Basic 이상</option></select></div>
