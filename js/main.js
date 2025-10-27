@@ -5,6 +5,96 @@ let currentExchangeRate = 1300;
 let egsRatesData = null;
 let currentServiceType = 'standard';
 
+// ==========================================
+// ===== 목적지 UI 동적 생성 및 관리 함수 =====
+// ==========================================
+
+/** eGS 데이터 로드 후 목적지 선택 UI를 초기화하고 채우는 함수 */
+function updateDestinationUI() {
+    if (!egsRatesData) {
+        console.warn("eGS 데이터가 없어 목적지 UI를 업데이트할 수 없습니다.");
+        return;
+    }
+    populateStandardDestinations();
+    populateExpressDestinations();
+}
+
+/** Standard 서비스 목적지 드롭다운을 채우는 함수 */
+function populateStandardDestinations() {
+    const primarySelect = document.getElementById('destinationPrimary');
+    const secondarySelect = document.getElementById('destinationSecondary');
+    primarySelect.innerHTML = ''; // 초기화
+    secondarySelect.innerHTML = '<option value="">국가 선택</option>';
+
+    // 1. 주요 국가 목록 (고정)
+    const primaryCountries = {
+        'US': '미국', 'CA': '캐나다', 'GB': '영국', 'DE': '독일',
+        'IT': '이탈리아', 'FR': '프랑스', 'ES': '스페인', 'AU': '호주'
+    };
+    Object.entries(primaryCountries).forEach(([code, name]) => {
+        primarySelect.add(new Option(name, code));
+    });
+    primarySelect.add(new Option('기타 유럽', 'EU_GROUP')); // 그룹 선택 옵션
+
+    // 2. '기타 유럽' 국가 목록 (동적)
+    const europeExclusions = ['GB', 'DE', 'IT', 'FR', 'ES'];
+    if (egsRatesData && egsRatesData.standard) {
+        Object.keys(egsRatesData.standard)
+            .filter(code => !primaryCountries[code] && !europeExclusions.includes(code))
+            .sort((a, b) => getCountryName(a).localeCompare(getCountryName(b), 'ko'))
+            .forEach(code => {
+                secondarySelect.add(new Option(getCountryName(code), code));
+            });
+    }
+
+    // 3. 1차 선택 시 2차 활성화 이벤트 연결
+    primarySelect.onchange = function() {
+        const isEuropeGroup = this.value === 'EU_GROUP';
+        secondarySelect.disabled = !isEuropeGroup;
+        if (!isEuropeGroup) {
+            secondarySelect.value = '';
+        }
+    };
+}
+
+/** Express 서비스 Zone 및 국가 드롭다운을 채우는 함수 */
+function populateExpressDestinations() {
+    const zoneSelect = document.getElementById('zonePrimary');
+    const countrySelect = document.getElementById('zoneSecondary');
+    zoneSelect.innerHTML = '<option value="">Zone 선택</option>';
+    countrySelect.innerHTML = '<option value="">국가 선택</option>';
+    countrySelect.disabled = true;
+
+    if (!egsRatesData || !egsRatesData.express || !egsRatesData.expressZones) return;
+
+    // 1. Zone 목록 정렬 및 추가
+    const sortedZones = Object.keys(egsRatesData.express).sort((a, b) => {
+        const valA = a.replace('D-', 'D').replace('-', '.');
+        const valB = b.replace('D-', 'D').replace('-', '.');
+        return valA.localeCompare(valB, undefined, { numeric: true });
+    });
+    sortedZones.forEach(zone => zoneSelect.add(new Option(`Zone ${zone}`, zone)));
+
+    // 2. Zone 선택 시 국가 목록 변경 이벤트 연결
+    zoneSelect.onchange = function() {
+        countrySelect.innerHTML = '<option value="">국가 선택</option>';
+        const selectedZone = this.value;
+        if (selectedZone && egsRatesData.expressZones[selectedZone]) {
+            const countries = egsRatesData.expressZones[selectedZone];
+            countries
+                .sort((a, b) => (ENGLISH_TO_KOREAN_MAP[a.name] || a.name).localeCompare(ENGLISH_TO_KOREAN_MAP[b.name] || b.name, 'ko'))
+                .forEach(country => {
+                    const koreanName = ENGLISH_TO_KOREAN_MAP[country.name] || country.name;
+                    countrySelect.add(new Option(`${koreanName} (${country.code})`, country.code));
+                });
+            countrySelect.disabled = false;
+        } else {
+            countrySelect.disabled = true;
+        }
+    };
+}
+
+
 // --- DOMContentLoaded Event Listener ---
 window.addEventListener('DOMContentLoaded', function() {
     fetchExchangeRate();
@@ -111,6 +201,7 @@ function loadSavedRatesData() {
         egsRatesData = loadedData;
         const lastUpdate = localStorage.getItem('egsRatesLastUpdate');
         showUploadStatus(`✅ 저장된 운임표 로드됨 (${new Date(lastUpdate).toLocaleDateString()})`, 'success');
+        updateDestinationUI(); // UI 업데이트 함수 호출
     } else {
         showUploadStatus('⚠️ 운임표를 업로드해주세요. 계산이 불가능합니다.', 'info');
     }
@@ -192,12 +283,13 @@ function handleFileUpload(event) {
                 // localStorage에 저장하는 로직은 egs-utils.js의 함수를 사용하도록 변경 가능
                 saveRatesData(parsedData); // saveRatesData는 egs-utils.js에 있어야 합니다.
                 
-                showUploadStatus(`✅ 운임표 업로드 완료! (${Object.keys(parsedData.standard).length}개 Standard 국가, ${Object.keys(parsedData.express).length}개 Express 국가)`, 'success');
+                showUploadStatus(`✅ 운임표 업로드 완료! (${Object.keys(parsedData.standard).length}개 Standard 국가, ${Object.keys(parsedData.express).length}개 Express Zone)`, 'success');
                 
                 // eGS 운임표 탭이 열려있으면 테이블 즉시 갱신
                 if (typeof window.updateEgsRatesTables === 'function') {
                     window.updateEgsRatesTables();
                 }
+                updateDestinationUI(); // UI 업데이트 함수 호출
             } else {
                 showUploadStatus('❌ 유효한 eGS 운임 데이터를 찾지 못했습니다. 파일 형식을 확인해주세요.', 'error');
             }
@@ -215,6 +307,19 @@ function toggleServiceType(type) {
     currentServiceType = type;
     document.querySelectorAll('.service-type-option').forEach(option => option.classList.remove('active'));
     document.querySelector(`.service-type-option[data-type="${type}"]`).classList.add('active');
+    
+    // 목적지 UI 전환
+    const standardWrapper = document.getElementById('standardDestinationWrapper');
+    const expressWrapper = document.getElementById('expressDestinationWrapper');
+    
+    if (type === 'standard') {
+        standardWrapper.classList.remove('hidden');
+        expressWrapper.classList.add('hidden');
+    } else {
+        standardWrapper.classList.add('hidden');
+        expressWrapper.classList.remove('hidden');
+    }
+
     updateWeightInfo();
 }
 
