@@ -293,6 +293,7 @@
 /* --- 운임표 테이블 스타일 --- */
 .rates-table-wrapper {
     overflow-x: auto;
+    overflow-y: auto; /* 세로 스크롤 추가 */
     margin: 24px 0;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -308,6 +309,9 @@
 .rates-table thead {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
+    position: sticky; /* 스크롤 시 헤더 고정 */
+    top: 0;
+    z-index: 10;
 }
 
 .rates-table thead th {
@@ -326,6 +330,22 @@
 
 .rates-table thead th:last-child {
     border-right: none;
+}
+
+/* ⭐ Zone 헤더 호버 스타일 (신규) */
+.zone-header {
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.zone-header:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    transform: scale(1.05);
+}
+
+.zone-header:active {
+    transform: scale(0.98);
 }
 
 .rates-table tbody tr {
@@ -367,6 +387,16 @@
 .rates-table tbody td.price-cell {
     color: #1d4ed8;
     font-weight: 500;
+    white-space: nowrap; /* '원' 글자 줄바꿈 방지 */
+}
+
+/* --- 운임표 테이블 세로 스크롤 높이 제한 (신규 추가) --- */
+#standardTableContainer .rates-table-wrapper {
+    max-height: 670px; /* 헤더 + 1.5kg 행까지 보이도록 설정 */
+}
+
+#expressTableContainer .rates-table-wrapper {
+    max-height: 800px; /* 헤더 + 8.0kg 행까지 보이도록 설정 */
 }
 
 /* --- No Data 메시지 --- */
