@@ -350,40 +350,4 @@ function getCountryName(code) {
     return countryNames[code] || code;
 }
 
-function getCountrySearchMap() {
-    return {
-        'US': 'US', '미국': 'US', 'USA': 'US', 'UNITED STATES': 'US', 'AMERICA': 'US',
-        'CA': 'CA', '캐나다': 'CA', 'CANADA': 'CA',
-        'GB': 'GB', '영국': 'GB', 'UK': 'GB', 'UNITED KINGDOM': 'GB', 'BRITAIN': 'GB',
-        'DE': 'DE', '독일': 'DE', 'GERMANY': 'DE',
-        'IT': 'IT', '이탈리아': 'IT', 'ITALY': 'IT',
-        'FR': 'FR', '프랑스': 'FR', 'FRANCE': 'FR',
-        'ES': 'ES', '스페인': 'ES', 'SPAIN': 'ES',
-        'AU': 'AU', '호주': 'AU', 'AUSTRALIA': 'AU',
-        'BE': 'BE', '벨기에': 'BE', 'BELGIUM': 'BE',
-        'CZ': 'CZ', '체코': 'CZ', 'CZECH': 'CZ', 'CZECHIA': 'CZ',
-        'HU': 'HU', '헝가리': 'HU', 'HUNGARY': 'HU',
-        'NL': 'NL', '네덜란드': 'NL', 'NETHERLANDS': 'NL', 'HOLLAND': 'NL',
-        'PL': 'PL', '폴란드': 'PL', 'POLAND': 'PL',
-        'PT': 'PT', '포르투갈': 'PT', 'PORTUGAL': 'PT',
-        'AT': 'AT', '오스트리아': 'AT', 'AUSTRIA': 'AT',
-        'FI': 'FI', '핀란드': 'FI', 'FINLAND': 'FI',
-        'IE': 'IE', '아일랜드': 'IE', 'IRELAND': 'IE',
-        'SE': 'SE', '스웨덴': 'SE', 'SWEDEN': 'SE',
-        'DK': 'DK', '덴마크': 'DK', 'DENMARK': 'DK',
-        'GR': 'GR', '그리스': 'GR', 'GREECE': 'GR',
-        'BG': 'BG', '불가리아': 'BG', 'BULGARIA': 'BG',
-        'HR': 'HR', '크로아티아': 'HR', 'CROATIA': 'HR',
-        'CY': 'CY', '키프로스': 'CY', 'CYPRUS': 'CY',
-        'EE': 'EE', '에스토니아': 'EE', 'ESTONIA': 'EE',
-        'LV': 'LV', '라트비아': 'LV', 'LATVIA': 'LV',
-        'LT': 'LT', '리투아니아': 'LT', 'LITHUANIA': 'LT',
-        'LU': 'LU', '룩셈부르크': 'LU', 'LUXEMBOURG': 'LU',
-        'MT': 'MT', '몰타': 'MT', 'MALTA': 'MT',
-        'RO': 'RO', '루마니아': 'RO', 'ROMANIA': 'RO',
-        'SK': 'SK', '슬로바키아': 'SK', 'SLOVAKIA': 'SK',
-        'SI': 'SI', '슬로베니아': 'SI', 'SLOVENIA': 'SI'
-    };
-}
-
 console.log('✅ eGS Utils script loaded successfully with Enhanced Express parsing.');
