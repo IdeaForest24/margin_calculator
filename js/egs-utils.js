@@ -7,7 +7,8 @@
 function parseExcelWorkbook(workbook) {
     const result = {
         standard: {},
-        express: {}
+        express: {},
+        expressZones: {}  // ⭐ Express Zone-국가 매핑 추가
     };
 
     workbook.SheetNames.forEach(sheetName => {
@@ -41,6 +42,9 @@ function parseExcelWorkbook(workbook) {
                 case 'Express':
                     Object.assign(result.express, parseExpress(data));
                     break;
+                case 'Express_Zones':  // ⭐ Zone 매핑 시트 추가
+                    result.expressZones = parseExpressZoneMapping(data);
+                    break;
                 default:
                     console.log(`  -> 알려지지 않은 시트 타입입니다: ${sheetType}`);
             }
@@ -49,7 +53,10 @@ function parseExcelWorkbook(workbook) {
         }
     });
 
-    console.log('=== 최종 파싱 결과 ===', result);
+    console.log('=== 최종 파싱 결과 ===');
+    console.log(`Standard: ${Object.keys(result.standard).length}개 국가`);
+    console.log(`Express: ${Object.keys(result.express).length}개 Zone`);
+    console.log(`Express Zones 매핑: ${Object.keys(result.expressZones).length}개 Zone`);
     return result;
 }
 
@@ -59,7 +66,14 @@ function parseExcelWorkbook(workbook) {
 function identifySheetType(sheetName, data) {
     const name = sheetName.toLowerCase();
     
-    if (name.includes('express') && !name.includes('surcharge') && !name.includes('zone')) return 'Express';
+    // Express Zone 매핑 시트 식별
+    if (name.includes('express') && name.includes('service') && name.includes('zone')) {
+        return 'Express_Zones';
+    }
+    
+    if (name.includes('express') && !name.includes('surcharge') && !name.includes('zone')) {
+        return 'Express';
+    }
 
     if (name.includes('standard')) {
         if (name.includes('us')) return 'Standard_US';
@@ -161,36 +175,137 @@ function parseStandardEU(data) {
     return results;
 }
 
+// ⭐ Express 파싱 - 최종 수정 버전
 function parseExpress(data) {
     const results = {};
-    const headerRowIndex = findRowContaining(data, 'Zone');
-    if (headerRowIndex === -1) return {};
+    const headerRowIndex = 3; // Row 4 = index 3
+    
+    console.log(`  -> Express 파싱 시작. 총 ${data.length}개 행 데이터`);
+    
+    if (!data[headerRowIndex]) {
+        console.error('  -> Express 시트에서 헤더 행(Row 4)을 찾을 수 없습니다.');
+        return {};
+    }
 
     const headerRow = data[headerRowIndex];
-    const countryColMap = { 'US': headerRow.indexOf('E'), 'CA': headerRow.indexOf('F'), 'GB': headerRow.indexOf('M'), 'AU': headerRow.indexOf('U') };
-
-    Object.keys(countryColMap).forEach(code => {
-        if(countryColMap[code] !== -1) results[code] = [];
-    });
-
-    for (let i = headerRowIndex + 2; i < data.length; i++) {
-        const row = data[i];
-        if (!row || row.length === 0) continue;
-        const weight = cleanNumber(row[0]);
-        if (isNaN(weight) || weight < 0) continue;
-
-        for (const [code, colIndex] of Object.entries(countryColMap)) {
-            if (colIndex === -1) continue;
-            const price = cleanNumber(row[colIndex]);
-            if (!isNaN(price) && price > 0) results[code].push({ weight, price });
+    console.log(`  -> 헤더 행 데이터 (처음 10개):`, headerRow.slice(0, 10));
+    
+    // ⭐ Zone 헤더 추출 (Col 3부터 = index 2부터 - Zone A 포함!)
+    const zoneColumns = [];
+    const zonePattern = /^[A-Z](-\d)?$/; // A, E, D-1, D-2 등
+    
+    for (let col = 2; col < headerRow.length; col++) {  // ⭐ col 2부터 시작 (Zone A 포함)
+        const cellValue = headerRow[col];
+        
+        // 빈 값 건너뛰기
+        if (!cellValue && cellValue !== 0) continue;
+        
+        // 문자열로 변환 (안전하게)
+        let zoneName = '';
+        if (typeof cellValue === 'string') {
+            zoneName = cellValue.trim();
+        } else if (typeof cellValue === 'number') {
+            zoneName = cellValue.toString().trim();
+        } else {
+            // 다른 타입은 건너뛰기
+            continue;
+        }
+        
+        // Zone 패턴 매칭
+        if (zoneName && zonePattern.test(zoneName)) {
+            zoneColumns.push({ col, zone: zoneName });
+            results[zoneName] = [];
+            console.log(`  -> Zone 발견: "${zoneName}" (col ${col}, Excel: ${String.fromCharCode(65+col)})`);
         }
     }
     
-    if (results['GB']) {
-        results['DE'] = [...results['GB']]; results['FR'] = [...results['GB']]; results['IT'] = [...results['GB']]; results['ES'] = [...results['GB']]; results['EU'] = [...results['GB']];
+    console.log(`  -> 총 ${zoneColumns.length}개 Zone 발견:`, zoneColumns.map(z => z.zone).join(', '));
+    
+    if (zoneColumns.length === 0) {
+        console.error('  -> Zone을 하나도 찾지 못했습니다!');
+        return {};
     }
-    console.log(`  -> Express 파싱 완료. ${Object.keys(results).length}개 국가 데이터 발견.`);
+    
+    // ⭐ 중량별 운임 파싱 (Row 6부터 = index 5부터)
+    let successCount = 0;
+    for (let row = 5; row < data.length; row++) {
+        const rowData = data[row];
+        if (!rowData || rowData.length < 3) continue;
+        
+        const weightValue = rowData[0]; // ⭐ Col A = index 0 (중량은 A열!)
+        const weight = cleanNumber(weightValue);
+        
+        if (isNaN(weight) || weight <= 0) {
+            // 중량이 유효하지 않으면 데이터 끝으로 판단
+            if (row > 10) break;  // 처음 10행 이후라면 중단
+            continue;
+        }
+        
+        let hasData = false;
+        zoneColumns.forEach(({ col, zone }) => {
+            const priceValue = rowData[col];
+            const price = cleanNumber(priceValue);
+            
+            if (!isNaN(price) && price > 0) {
+                results[zone].push({ 
+                    weight: parseFloat(weight.toFixed(1)), 
+                    price: Math.round(price) 
+                });
+                hasData = true;
+            }
+        });
+        
+        if (hasData) successCount++;
+    }
+    
+    console.log(`  -> Express 파싱 완료. ${successCount}개 중량 구간, ${Object.keys(results).length}개 Zone 데이터.`);
+    
+    // 각 Zone별 데이터 수 출력
+    Object.keys(results).slice(0, 5).forEach(zone => {
+        console.log(`     Zone ${zone}: ${results[zone].length}개 데이터`);
+    });
+    
     return results;
+}
+
+// ⭐ Express Zone-국가 매핑 파싱
+function parseExpressZoneMapping(data) {
+    const zoneMap = {};
+    
+    console.log(`  -> Express Zone 매핑 파싱 시작. 총 ${data.length}개 행 데이터`);
+    
+    // Row 3부터 시작 (index 2) - Row 2는 헤더
+    for (let i = 2; i < data.length; i++) {
+        const row = data[i];
+        if (!row || row.length < 3) continue;
+        
+        const countryValue = row[0];
+        const codeValue = row[1];
+        const zoneValue = row[2];
+        
+        if (!countryValue || !zoneValue) continue;
+        
+        // 문자열로 안전하게 변환
+        const country = String(countryValue).trim();
+        const code = codeValue ? String(codeValue).trim() : '';
+        const zone = String(zoneValue).trim();
+        
+        if (!zoneMap[zone]) {
+            zoneMap[zone] = [];
+        }
+        
+        zoneMap[zone].push({
+            name: country,
+            code: code
+        });
+    }
+    
+    console.log(`  -> Express Zone 매핑 파싱 완료. ${Object.keys(zoneMap).length}개 Zone.`);
+    Object.keys(zoneMap).forEach(zone => {
+        console.log(`     Zone ${zone}: ${zoneMap[zone].length}개 국가`);
+    });
+    
+    return zoneMap;
 }
 
 function findRowContaining(data, keyword, columnIndex = -1) {
@@ -254,7 +369,7 @@ function clearRatesData() {
 }
 
 // ========================================
-// 국가 관련 유틸리티 (★★★★★ 내용 복원)
+// 국가 관련 유틸리티
 // ========================================
 function getCountryName(code) {
     const countryNames = {
@@ -303,7 +418,7 @@ function getCountrySearchMap() {
 }
 
 // ========================================
-// 운임 조회 함수 (★★★★★ 내용 복원)
+// 운임 조회 함수
 // ========================================
 function getShippingRate(countryCode, weight, serviceType = 'standard') {
     if (!egsRatesData || !egsRatesData[serviceType]) {
@@ -331,4 +446,4 @@ function getShippingRate(countryCode, weight, serviceType = 'standard') {
     return null;
 }
 
-console.log('eGS Utils script loaded successfully with advanced parsing logic.');
+console.log('✅ eGS Utils script loaded successfully with Enhanced Express parsing.');
