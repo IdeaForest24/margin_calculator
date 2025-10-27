@@ -18,18 +18,12 @@ function openEgsSubTab(event, tabName) {
 }
 
 function searchCountryRate() {
-    const searchInput = document.getElementById('countrySearchInput').value.trim().toUpperCase();
+    const searchInput = document.getElementById('countrySearchInput').value.trim();
+    const upperInput = searchInput.toUpperCase();
     
     if (!searchInput) {
         alert('국가명 또는 코드를 입력해주세요.');
         return;
-    }
-    
-    const countrySearchMap = getCountrySearchMap();
-    let countryCode = countrySearchMap[searchInput];
-    
-    if (!countryCode) {
-        countryCode = searchInput;
     }
     
     if (!egsRatesData || !egsRatesData.standard) {
@@ -37,7 +31,48 @@ function searchCountryRate() {
         return;
     }
     
-    if (!egsRatesData.standard[countryCode]) {
+    let countryCode = null;
+    
+    // 1. 먼저 egsRatesData.standard에 직접 코드가 있는지 확인
+    if (egsRatesData.standard[upperInput]) {
+        countryCode = upperInput;
+    }
+    
+    // 2. 없으면 COUNTRY_MAP[searchInput]으로 한글→영문 변환 시도
+    if (!countryCode && COUNTRY_MAP[searchInput]) {
+        const englishName = COUNTRY_MAP[searchInput];
+        
+        // 3. 영문명이 있으면 간단한 매핑 객체로 코드 변환
+        const nameToCode = {
+            'U.S.': 'US',
+            'Canada': 'CA',
+            'United Kingdom': 'GB',
+            'Germany': 'DE',
+            'Italy': 'IT',
+            'France': 'FR',
+            'Spain': 'ES',
+            'Australia': 'AU'
+        };
+        
+        if (nameToCode[englishName]) {
+            countryCode = nameToCode[englishName];
+        }
+    }
+    
+    // 4. 그래도 없으면 egsRatesData.standard의 키를 순회하며 getCountryName() 결과와 비교
+    if (!countryCode) {
+        for (const code of Object.keys(egsRatesData.standard)) {
+            const countryName = getCountryName(code);
+            if (countryName.toUpperCase() === upperInput || 
+                countryName === searchInput) {
+                countryCode = code;
+                break;
+            }
+        }
+    }
+    
+    // 5. countryCode를 찾지 못하면 기존 에러 처리
+    if (!countryCode || !egsRatesData.standard[countryCode]) {
         const availableCountries = Object.keys(egsRatesData.standard).sort();
         const countryList = availableCountries.map(code => {
             const name = getCountryName(code);
