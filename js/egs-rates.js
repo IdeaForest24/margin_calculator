@@ -91,57 +91,54 @@ function searchCountryRate() {
     showCountryRateTable(countryCode, countryData, 'Standard');
 }
 
+// ✅ 수정된 searchExpressCountryRate 함수
 function searchExpressCountryRate() {
-    let searchInput = document.getElementById('expressCountrySearchInput').value.trim();
+    const searchInput = document.getElementById('expressCountrySearchInput').value.trim();
     const originalInput = searchInput;
     
     if (!searchInput) {
-        alert('국가명을 입력해주세요.');
+        alert('국가명 또는 코드를 입력해주세요.');
         return;
     }
     
-    if (!egsRatesData || !egsRatesData.expressZones || !egsRatesData.express) {
+    if (!egsRatesData || !egsRatesData.express) {
         showSearchResultModal('❌ 데이터 없음', '운임표 파일을 먼저 업로드해주세요.');
         return;
     }
     
-    const englishCountryName = COUNTRY_MAP[searchInput];
-    if (englishCountryName) {
-        searchInput = englishCountryName;
+    // 1단계: 국가 코드로 직접 검색
+    let countryData = findCountryByCode(searchInput);
+    
+    // 2단계: 국가명으로 검색
+    if (!countryData) {
+        countryData = findCountryByName(searchInput);
     }
     
-    const foundZone = findZoneByCountry(searchInput.toUpperCase());
-    
-    if (!foundZone) {
+    if (!countryData) {
         showSearchResultModal(
             '❌ 검색 결과 없음', 
             `"${originalInput}"에 해당하는 국가를 찾을 수 없습니다.<br><br>` +
-            `국가명은 한글 또는 영어로 입력해주세요. (예: 미국, United States)`
+            `💡 검색 방법:<br>` +
+            `- 국가 코드: US, CA, GB, KR<br>` +
+            `- 한글명: 미국, 캐나다, 영국, 대한민국<br>` +
+            `- 영문명: United States, Canada, United Kingdom`
         );
         return;
     }
     
-    showZoneRateTable(foundZone.zone, foundZone.country);
-}
-
-function findZoneByCountry(searchTerm) {
-    if (!egsRatesData || !egsRatesData.expressZones) return null;
-    
-    const term = searchTerm.toUpperCase();
-    
-    for (const [zone, countries] of Object.entries(egsRatesData.expressZones)) {
-        const found = countries.find(country => 
-            country.name.toUpperCase().includes(term) || 
-            (country.code && country.code.toUpperCase() === term)
+    // Zone 데이터 확인
+    if (!egsRatesData.express[countryData.zone]) {
+        showSearchResultModal(
+            '❌ 운임 데이터 없음',
+            `"${countryData.nameKo} (${countryData.code})"의 Zone ${countryData.zone} 운임 데이터가 없습니다.`
         );
-        
-        if (found) {
-            return { zone, country: found.name };
-        }
+        return;
     }
     
-    return null;
+    showZoneRateTable(countryData.zone, `${countryData.nameKo} (${countryData.code})`);
 }
+
+// ❌ findZoneByCountry 함수 삭제됨 (더 이상 필요 없음)
 
 function showZoneRateTable(zone, highlightCountry = null) {
     if (!egsRatesData || !egsRatesData.express || !egsRatesData.express[zone]) {
@@ -200,18 +197,21 @@ function showZoneRateTable(zone, highlightCountry = null) {
     setTimeout(() => modal.classList.add('show'), 10);
 }
 
+// ✅ 수정된 showZoneCountries 함수
 function showZoneCountries(zone) {
-    if (!egsRatesData || !egsRatesData.expressZones || !egsRatesData.expressZones[zone]) {
+    const countries = findCountriesByZone(zone);
+    
+    if (countries.length === 0) {
         alert(`Zone ${zone}의 국가 정보가 없습니다.`);
         return;
     }
     
-    const countries = egsRatesData.expressZones[zone];
+    // 한글명으로 정렬
+    countries.sort((a, b) => a.nameKo.localeCompare(b.nameKo, 'ko'));
     
     let countryListHTML = '<ul style="line-height: 2; margin-left: 20px;">';
     countries.forEach(country => {
-        const koreanName = ENGLISH_TO_KOREAN_MAP[country.name] || country.name;
-        countryListHTML += `<li>${koreanName}${country.code ? ` (${country.code})` : ''}</li>`;
+        countryListHTML += `<li>${country.nameKo} (${country.code})</li>`;
     });
     countryListHTML += '</ul>';
     
