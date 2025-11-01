@@ -50,7 +50,7 @@ function populateStandardDestinations() {
     };
 }
 
-// Express 서비스 Zone 및 국가 드롭다운
+// ✅ 수정된 Express 서비스 Zone 및 국가 드롭다운
 function populateExpressDestinations() {
     const zoneSelect = document.getElementById('zonePrimary');
     const countrySelect = document.getElementById('zoneSecondary');
@@ -58,27 +58,34 @@ function populateExpressDestinations() {
     countrySelect.innerHTML = '<option value="">국가 선택</option>';
     countrySelect.disabled = true;
 
-    if (!egsRatesData || !egsRatesData.express || !egsRatesData.expressZones) return;
+    if (!egsRatesData || !egsRatesData.express) return;
 
-    const sortedZones = Object.keys(egsRatesData.express).sort((a, b) => {
-        const valA = a.replace('D-', 'D').replace('-', '.');
-        const valB = b.replace('D-', 'D').replace('-', '.');
-        return valA.localeCompare(valB, undefined, { numeric: true });
-    });
+    // getAllZones() 함수 사용
+    const sortedZones = getAllZones();
     sortedZones.forEach(zone => zoneSelect.add(new Option(`Zone ${zone}`, zone)));
 
     zoneSelect.onchange = function() {
         countrySelect.innerHTML = '<option value="">국가 선택</option>';
         const selectedZone = this.value;
-        if (selectedZone && egsRatesData.expressZones[selectedZone]) {
-            const countries = egsRatesData.expressZones[selectedZone];
-            countries
-                .sort((a, b) => (ENGLISH_TO_KOREAN_MAP[a.name] || a.name).localeCompare(ENGLISH_TO_KOREAN_MAP[b.name] || b.name, 'ko'))
-                .forEach(country => {
-                    const koreanName = ENGLISH_TO_KOREAN_MAP[country.name] || country.name;
-                    countrySelect.add(new Option(`${koreanName} (${country.code})`, country.code));
+        
+        if (selectedZone) {
+            // findCountriesByZone() 함수 사용
+            const countries = findCountriesByZone(selectedZone);
+            
+            if (countries.length > 0) {
+                // 한글명으로 정렬
+                countries.sort((a, b) => a.nameKo.localeCompare(b.nameKo, 'ko'));
+                
+                countries.forEach(country => {
+                    countrySelect.add(new Option(
+                        `${country.nameKo} (${country.code})`, 
+                        country.code
+                    ));
                 });
-            countrySelect.disabled = false;
+                countrySelect.disabled = false;
+            } else {
+                countrySelect.disabled = true;
+            }
         } else {
             countrySelect.disabled = true;
         }
