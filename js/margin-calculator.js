@@ -304,8 +304,15 @@ function displayResultsInModal(results) {
                 <div class="flow-step-header">💵 ebay 판매가</div>
                 <div class="flow-step-content">
                     <div class="flow-value main">
-                        <span>권장 판매가</span>
+                        <span>권장 판매가 (무료)</span>
                         <span class="value-number blue">$${results.requiredSellingPriceUSD.toFixed(2)}</span>
+                    </div>
+                    <div class="flow-value main" style="margin-top: 8px;">
+                        <span>권장 판매가 (유료)</span>
+                        <span class="value-number orange">$${(results.requiredSellingPriceUSD - (results.egsInternationalShipping / currentExchangeRate)).toFixed(2)}</span>
+                    </div>
+                    <div style="font-size: 12px; color: #6b7280; margin-top: 8px; padding: 8px; background: #f9fafb; border-radius: 4px;">
+                        💡 유료배송 = 무료배송가 - 국제배송비 ($${(results.egsInternationalShipping / currentExchangeRate).toFixed(2)})
                     </div>
                 </div>
             </div>
