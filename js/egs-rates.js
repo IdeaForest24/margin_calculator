@@ -138,8 +138,6 @@ function searchExpressCountryRate() {
     showZoneRateTable(countryData.zone, `${countryData.nameKo} (${countryData.code})`);
 }
 
-// ❌ findZoneByCountry 함수 삭제됨 (더 이상 필요 없음)
-
 function showZoneRateTable(zone, highlightCountry = null) {
     if (!egsRatesData || !egsRatesData.express || !egsRatesData.express[zone]) {
         alert(`Zone ${zone}의 운임 데이터가 없습니다.`);

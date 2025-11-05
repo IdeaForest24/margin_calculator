@@ -801,10 +801,10 @@ const COUNTRY_DATA = {
         code: 'CI',
         zone: 'J'
     },
-    'CG': {
+    'CD': {
         nameEn: 'Democratic Republic of the Congo',
         nameKo: '콩고민주공화국',
-        code: 'CG',
+        code: 'CD',
         zone: 'J'
     },
     'DJ': {
@@ -951,10 +951,10 @@ const COUNTRY_DATA = {
         code: 'MZ',
         zone: 'J'
     },
-    '': {
+    'NA': {
         nameEn: 'Namibia',
         nameKo: '나미비아',
-        code: '',
+        code: 'NA',
         zone: 'J'
     },
     'NP': {
@@ -1299,14 +1299,6 @@ function normalizeName(name) {
         .replace(/['\(\),\.\-]/g, '')
         .replace(/\s+/g, ' ')
         .trim();
-}
-
-/**
- * 모든 국가 코드 목록 반환
- * @returns {Array<string>} 국가 코드 배열
- */
-function getAllCountryCodes() {
-    return Object.keys(COUNTRY_DATA);
 }
 
 /**
