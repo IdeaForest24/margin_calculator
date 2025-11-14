@@ -158,6 +158,7 @@ function findTargetSellingPrice(totalCostUSD, targetMarginRate, category, hasSto
     return bestPrice;
 }
 
+// [수정] calculateMargin 함수
 function calculateMargin() {
     if (!egsRatesData) {
         alert('⚠️ 운임표를 먼저 업로드해주세요!');
@@ -184,10 +185,10 @@ function calculateMargin() {
     const adEnabled = document.getElementById('adEnabled').checked;
     const adRate = adEnabled ? (parseFloat(document.getElementById('adRate').value) || 0) : 0;
 
-    const finalWeight = getFinalWeight();
+    // getFinalWeight 함수에 destination 코드를 인자로 전달
+    const finalWeight = getFinalWeight(destination);
     const egsShippingCost = calculateEgsShipping(finalWeight, destination);
     
-    // country-data.js 활용으로 통합
     const destinationName = ENGLISH_TO_KOREAN_MAP[getCountryName(destination)] || 
                             getCountryName(destination) || 
                             (findZoneByCountryCode(destination) ? 
@@ -244,7 +245,8 @@ function calculateMargin() {
         actualMarginRate,
         targetMarginRate,
         finalWeight,
-        volumetricWeight: calculateVolumetricWeight(),
+        // calculateVolumetricWeight 함수에 destination 코드를 인자로 전달
+        volumetricWeight: calculateVolumetricWeight(destination),
         hasStore,
         isKoreanSeller,
         destination,
