@@ -5,6 +5,28 @@ let currentExchangeRate = 1300;
 let egsRatesData = null;
 let currentServiceType = 'standard';
 
+// [추가] 유럽 판별을 위한 Zone 정의 및 헬퍼 함수
+const EUROPEAN_ZONES = ['G', 'H', 'M'];
+
+/**
+ * 국가 코드가 유럽 Zone에 속하는지 확인합니다. (country-data.js 활용)
+ * @param {string} countryCode - 확인할 국가 코드 (예: 'DE', 'US')
+ * @returns {boolean} 유럽 국가이면 true, 아니면 false
+ */
+function isEuropeanCountry(countryCode) {
+    if (!countryCode) return false;
+
+    // country-data.js에 정의된 findCountryByCode 함수를 사용합니다.
+    const countryData = findCountryByCode(countryCode);
+
+    if (countryData && countryData.zone) {
+        return EUROPEAN_ZONES.includes(countryData.zone);
+    }
+    // country-data.js에 데이터가 없는 Standard 전용 국가(예: EU 그룹)는 유럽으로 간주하지 않음
+    return false;
+}
+
+
 // eGS 데이터 기반 목적지 드롭다운 초기화
 function updateDestinationUI() {
     if (!egsRatesData) {
@@ -307,10 +329,14 @@ function toggleServiceType(type) {
     updateWeightInfo();
 }
 
+// [수정] updateWeightInfo 함수
 function updateWeightInfo() {
-    const volumetricWeight = calculateVolumetricWeight();
-    const finalWeight = getFinalWeight();
+    // getSelectedDestination()는 margin-calculator.js에 정의되어 있음
+    const destinationCode = getSelectedDestination();
+    const volumetricWeight = calculateVolumetricWeight(destinationCode);
+    const finalWeight = getFinalWeight(destinationCode);
     const weightInfo = document.getElementById('weightInfo');
+    
     if (volumetricWeight > 0 || finalWeight > 0) {
         const serviceTypeText = currentServiceType === 'express' ? 'eGS Express' : 'eGS Standard';
         weightInfo.innerHTML = `📦 부피 중량: ${volumetricWeight.toFixed(2)}kg | <strong>과금 중량: ${finalWeight.toFixed(2)}kg</strong><br>🚚 선택된 서비스: ${serviceTypeText}`;
@@ -320,17 +346,38 @@ function updateWeightInfo() {
     }
 }
 
-function calculateVolumetricWeight() {
+// [수정] calculateVolumetricWeight 함수
+function calculateVolumetricWeight(destinationCode) {
     const length = parseFloat(document.getElementById('length').value) || 0;
     const width = parseFloat(document.getElementById('width').value) || 0;
     const height = parseFloat(document.getElementById('height').value) || 0;
-    return (length && width && height) ? (length * width * height) / 6000 : 0;
+
+    if (!length || !width || !height) return 0;
+
+    let divisor = 6000; // 기본값 (Standard 비유럽)
+
+    if (currentServiceType === 'express') {
+        // Express는 모든 국가 /5000
+        divisor = 5000;
+    } else { // Standard 서비스일 경우
+        // isEuropeanCountry 헬퍼 함수를 사용하여 유럽 국가 여부 판별
+        if (isEuropeanCountry(destinationCode)) {
+            // 유럽 국가는 /5000
+            divisor = 5000;
+        }
+        // 그 외 (미국, 호주, 캐나다 등)는 기본값 /6000 유지
+    }
+
+    return (length * width * height) / divisor;
 }
 
-function getFinalWeight() {
+// [수정] getFinalWeight 함수
+function getFinalWeight(destinationCode) {
     const actualWeight = parseFloat(document.getElementById('weight').value) || 0;
-    return Math.max(actualWeight, calculateVolumetricWeight());
+    // calculateVolumetricWeight 함수에 destinationCode를 전달
+    return Math.max(actualWeight, calculateVolumetricWeight(destinationCode));
 }
+
 
 function openHelpModal() {
     const modal = document.getElementById('helpModal');
