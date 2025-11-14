@@ -173,6 +173,78 @@
 }
 .calculate-btn:hover { background: linear-gradient(to right, #1d4ed8, #15803d); transform: translateY(-1px); }
 
+/* 💾 설정 저장 버튼 스타일 */
+.save-settings-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.save-settings-btn:hover {
+    background: linear-gradient(135deg, #059669, #047857);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.save-settings-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+}
+
+/* 토스트 알림 스타일 */
+.toast {
+    position: fixed;
+    bottom: -100px;
+    right: 24px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    padding: 16px 24px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 10000;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    min-width: 280px;
+}
+
+.toast.show {
+    bottom: 24px;
+}
+
+.toast::before {
+    content: '✅';
+    font-size: 20px;
+}
+
+@media (max-width: 768px) {
+    .toast {
+        right: 12px;
+        left: 12px;
+        min-width: auto;
+    }
+    
+    .toast.show {
+        bottom: 12px;
+    }
+}
+
 .loading {
     display: inline-block;
     width: 16px;
@@ -635,4 +707,17 @@ select:disabled {
     .form-grid-special {
         grid-template-columns: 1fr;
     }
+}
+
+.section-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.save-settings-btn.compact {
+    width: auto;
+    margin-top: 0;
+    padding: 8px 20px;
+    font-size: 14px;
 }
