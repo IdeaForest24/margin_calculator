@@ -97,6 +97,11 @@ window.addEventListener('DOMContentLoaded', function() {
     loadSavedRatesData();
     setupDragAndDrop();
     setupEventListeners();
+    
+    // 💾 저장된 설정 자동 불러오기
+    if (typeof loadCalculatorSettings === 'function') {
+        loadCalculatorSettings();
+    }
 });
 
 function setupEventListeners() {
