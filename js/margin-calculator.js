@@ -487,3 +487,97 @@ function displayResultsInModal(results) {
     modalContent.innerHTML = modalHTML;
     openResultModal();
 }
+
+// =========================================
+// 💾 설정 저장/불러오기 기능
+// =========================================
+
+function saveCalculatorSettings() {
+    const settings = {
+        serviceType: currentServiceType,
+        destinationPrimary: document.getElementById('destinationPrimary').value,
+        destinationSecondary: document.getElementById('destinationSecondary').value,
+        zonePrimary: document.getElementById('zonePrimary').value,
+        zoneSecondary: document.getElementById('zoneSecondary').value,
+        category: document.getElementById('category').value,
+        storeType: document.getElementById('storeType').value,
+        isKoreanSeller: document.getElementById('isKoreanSeller').value,
+        targetMargin: document.getElementById('targetMargin').value,
+        adEnabled: document.getElementById('adEnabled').checked,
+        adRate: document.getElementById('adRate').value
+    };
+
+    localStorage.setItem('ebayCalculatorSettings', JSON.stringify(settings));
+    showToast('설정이 저장되었습니다');
+}
+
+function loadCalculatorSettings() {
+    const savedSettings = localStorage.getItem('ebayCalculatorSettings');
+    if (!savedSettings) return;
+
+    try {
+        const settings = JSON.parse(savedSettings);
+        
+        // 배송 서비스 타입 복원
+        if (settings.serviceType) {
+            toggleServiceType(settings.serviceType);
+        }
+        
+        // Standard 배송 설정 복원
+        if (settings.destinationPrimary) {
+            document.getElementById('destinationPrimary').value = settings.destinationPrimary;
+            if (settings.destinationPrimary === 'EU_GROUP' && settings.destinationSecondary) {
+                document.getElementById('destinationSecondary').disabled = false;
+                document.getElementById('destinationSecondary').value = settings.destinationSecondary;
+            }
+        }
+        
+        // Express 배송 설정 복원
+        if (settings.zonePrimary) {
+            document.getElementById('zonePrimary').value = settings.zonePrimary;
+            // Zone 선택 시 국가 목록 업데이트
+            const event = new Event('change');
+            document.getElementById('zonePrimary').dispatchEvent(event);
+            
+            // 국가 드롭다운이 채워진 후 선택
+            setTimeout(() => {
+                if (settings.zoneSecondary) {
+                    document.getElementById('zoneSecondary').value = settings.zoneSecondary;
+                }
+            }, 100);
+        }
+        
+        // 기타 설정 복원
+        if (settings.category) {
+            document.getElementById('category').value = settings.category;
+        }
+        if (settings.storeType) {
+            document.getElementById('storeType').value = settings.storeType;
+        }
+        if (settings.isKoreanSeller) {
+            document.getElementById('isKoreanSeller').value = settings.isKoreanSeller;
+        }
+        if (settings.targetMargin) {
+            document.getElementById('targetMargin').value = settings.targetMargin;
+        }
+        
+        // 광고 설정 복원
+        document.getElementById('adEnabled').checked = settings.adEnabled || false;
+        if (settings.adEnabled && settings.adRate) {
+            document.getElementById('adRate').disabled = false;
+            document.getElementById('adRate').value = settings.adRate;
+        }
+    } catch (error) {
+        console.error('설정 불러오기 오류:', error);
+    }
+}
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
