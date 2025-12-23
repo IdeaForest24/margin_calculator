@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ebay 판매 마진 계산기 v3.0 Beta</title>
+
+    <!-- CSS 파일 연결 -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/margin-calculator.css">
+    <link rel="stylesheet" href="css/sales-price-adjustment.css">
+    <link rel="stylesheet" href="css/egs-rates.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                📈 ebay 판매 마진 계산기 <span class="version-badge">v3.0 Beta</span>
+            </h1>
+        </div>
+
+        <!-- 탭 네비게이션 -->
+        <div class="tabs">
+            <button class="tab-link active" onclick="openTab(event, 'marginCalculator')">마진 계산기</button>
+            <button class="tab-link" onclick="openTab(event, 'salesPriceAdjustment')">판매가 보정</button>
+            <button class="tab-link" onclick="openTab(event, 'egsRates')">eGS 운임표</button>
+        </div>
+
+        <!-- ================================== -->
+        <!--        마진 계산기 탭 콘텐츠         -->
+        <!-- ================================== -->
+        <div id="marginCalculator" class="tab-content active">
+             <div class="top-bar">
+                <div class="exchange-rate-info">
+                    <div>
+                        <span id="exchangeRateStatus" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: #d1d5db; margin-right: 6px; vertical-align: middle;"></span>
+                        <span>실시간 환율: </span>
+                        <span class="rate" id="exchangeRateDisplay">1 USD = 로딩중...</span>
+                        <span id="lastUpdated" class="text-gray"></span>
+                    </div>
+                    <button class="refresh-btn" onclick="fetchExchangeRate(true)">
+                        <span id="refreshIcon">🔄</span> 갱신
+                    </button>
+                </div>
+                
+                <div class="data-management-section">
+                    <div class="excel-upload-compact" id="uploadSection" onclick="document.getElementById('excelFile').click()">
+                        <div class="upload-icon">📋</div>
+                        <div class="upload-text">eGS 운임표 업로드</div>
+                        <input type="file" id="excelFile" class="file-input" accept=".xlsx,.xls">
+                    </div>
+                    <button class="clear-data-btn" onclick="clearSavedRatesData()">운임표 삭제</button>
+                    <button class="help-btn" onclick="openHelpModal()">📖 도움말</button>
+                </div>
+            </div>
+            <div id="uploadStatus" class="upload-status hidden"></div>
+
+            <!-- 입력 섹션 -->
+            <div class="input-section-wrapper">
+                <div class="input-section">
+                    <!-- 상단: 제품 원가 정보 + eGS 배송비 (2열) -->
+                    <div class="top-input-grid">
+                        <!-- 제품 원가 정보 -->
+                        <div class="section blue">
+                            <div class="section-header blue">📦 제품 원가</div>
+                            <div class="form-grid">
+                                <div class="form-group"><label for="productCost">제품 원가 (원)</label><input type="number" id="productCost"></div>
+                                <div class="form-group"><label for="supplierShipping">매입처 배송비 (원)</label><input type="number" id="supplierShipping"></div>
+                                <div class="form-group"><label for="packagingCost">포장 (원)</label><input type="number" id="packagingCost" placeholder="예: 1000"></div>
+                            </div>
+                        </div>
+
+                        <!-- eGS 배송비 -->
+                        <div class="section orange">
+                            <div class="section-header orange">🚚 eGS 배송비</div>
+                            <div class="service-type-toggle">
+                                <div class="service-type-option active" data-type="standard">🚛 Standard</div>
+                                <div class="service-type-option" data-type="express">✈️ Express</div>
+                                <div class="service-type-option" data-type="ems">🚀 EMS</div>
+                            </div>
+                            <div class="form-group" style="margin-top: 16px;">
+                                <label for="destinationPrimary">목적지 *</label>
+                                <!-- Standard 배송 UI -->
+                                <div id="standardDestinationWrapper" class="destination-grid">
+                                    <select id="destinationPrimary"></select>
+                                    <select id="destinationSecondary" disabled></select>
+                                </div>
+                                <!-- Express 배송 UI (초기에는 숨김) -->
+                                <div id="expressDestinationWrapper" class="destination-grid hidden">
+                                    <select id="zonePrimary"></select>
+                                    <select id="zoneSecondary" disabled></select>
+                                </div>
+                                <!-- EMS 배송 UI (초기에는 숨김) -->
+                                <div id="emsDestinationWrapper" class="destination-grid hidden">
+                                    <select id="emsDestinationPrimary"></select>
+                                    <select id="emsDestinationSecondary" disabled></select>
+                                </div>
+                            </div>
+                            <div class="form-grid" style="margin-top: 16px;">
+                                <div class="form-group"><label for="weight">실제 중량 (kg)</label><input type="number" step="0.1" id="weight" placeholder="예: 0.5"></div>
+                                <div class="form-group"><label for="egsShipping">eGS 창고 입고비 (원)</label><input type="number" id="egsShipping"></div>
+                            </div>
+                            <div class="dimension-grid" style="margin-top: 16px;">
+                                <div class="form-group"><label for="length">가로 (cm)</label><input type="number" id="length"></div>
+                                <div class="form-group"><label for="width">세로 (cm)</label><input type="number" id="width"></div>
+                                <div class="form-group"><label for="height">높이 (cm)</label><input type="number" id="height"></div>
+                            </div>
+                            <div id="weightInfo" class="info-box hidden"></div>
+                        </div>
+                        
+                        <!-- 하단: 가격 조건 (전체 너비) -->
+                        <div class="section green">
+                            <div class="section-header-row">
+                                <div class="section-header green">🌍 가격 조건</div>
+                                <button class="save-settings-btn compact" onclick="saveCalculatorSettings()">
+                                    💾 설정 저장
+                                </button>
+                            </div>
+                            <div class="form-grid-special">
+                                <div class="form-group">
+                                    <label for="category">ebay 카테고리 *</label>
+                                    <select id="category">
+                                        <option value="">선택</option>
+                                        <option value="most_categories">대부분 카테고리</option>
+                                        <option value="books_movies_music">도서/영화/음악</option>
+                                        <option value="womens_bags">여성용 가방</option>
+                                        <option value="athletic_shoes">운동화</option>
+                                        <option value="jewelry_watches">보석/시계</option>
+                                        <option value="watches_parts">시계/부품</option>
+                                        <option value="coins_paper_money">동전/지폐</option>
+                                        <option value="bullion">금괴/귀금속</option>
+                                        <option value="guitars_basses">악기(기타/베이스)</option>
+                                        <option value="trading_cards">트레이딩 카드</option>
+                                        <option value="nft_categories">NFT</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-grid" style="margin-top: 16px;">
+                                <div class="form-group"><label for="storeType">ebay 스토어 구독</label><select id="storeType"><option value="none">없음/Starter</option><option value="basic">Basic 이상</option></select></div>
+                                <div class="form-group"><label for="isKoreanSeller">판매자 위치</label><select id="isKoreanSeller"><option value="true">한국 (VAT 10%)</option><option value="false">해외</option></select></div>
+                            </div>
+                            <div class="form-grid" style="margin-top: 16px;">
+                                <div class="form-group"><label for="targetMargin">목표 마진율 (%)</label><input type="number" step="1" id="targetMargin" placeholder="예: 20"></div>
+                                <div class="form-group">
+                                    <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                        <input type="checkbox" id="adEnabled" onchange="toggleAdInput()" style="width: auto; margin: 0;">
+                                        <span>광고</span>
+                                    </label>
+                                    <input type="number" step="0.1" id="adRate" placeholder="예: 5" disabled>
+                                    <div class="help-text">광고비율 (판매가의 %)</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 마진 계산 결과 -->
+                        <div class="section" id="result-ui-container">
+                            <div class="section-header result-header-with-buttons">
+                                <span>📊 마진 계산 결과</span>
+                                <div id="result-header-buttons" class="result-header-buttons"></div>
+                            </div>
+                            <div id="result-ui-content" class="result-content-style result-placeholder-style">
+                                <div class="no-data-message">
+                                    <p style="margin: 0;">마진 계산하기 버튼을 눌러주세요.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="calculate-btn" onclick="calculateMargin()">🧮 마진 계산하기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================== -->
+        <!--       판매가 보정 탭 콘텐츠        -->
+        <!-- ================================== -->
+        <div id="salesPriceAdjustment" class="tab-content">
+            <div class="sales-price-adjustment-content">
+                <div id="sales-price-adjustment-results-container">
+                    <!-- 마진 계산 결과 상세 내용이 여기에 로드됩니다 -->
+                    <p>마진 계산기에서 '보정하기' 버튼을 눌러주세요.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================== -->
+        <!--         eGS 운임표 탭 콘텐츠         -->
+        <!-- ================================== -->
+        <div id="egsRates" class="tab-content">
+            <div class="egs-rates-header">
+                <h2>📋 eGS 운임표</h2>
+                <p class="egs-rates-description">업로드된 eGS 운임표를 확인할 수 있습니다.</p>
+            </div>
+
+            <!-- eGS 서브탭 -->
+            <div class="egs-subtabs">
+                <button class="egs-subtab-link active" onclick="openEgsSubTab(event, 'egsStandard')">
+                    🚛 Standard
+                </button>
+                <button class="egs-subtab-link" onclick="openEgsSubTab(event, 'egsExpress')">
+                    ✈️ Express
+                </button>
+                <button class="egs-subtab-link" onclick="openEgsSubTab(event, 'egsEms')">
+                    🚀 EMS
+                </button>
+            </div>
+
+            <!-- Standard 서브탭 -->
+            <div id="egsStandard" class="egs-subtab-content active">
+                <!-- 검색 영역 -->
+                <div class="country-search-section">
+                    <div class="country-search-header">
+                        🔍 국가별 Standard 배송비 검색
+                    </div>
+                    <div class="country-search-form">
+                        <input 
+                            type="text" 
+                            id="countrySearchInput" 
+                            class="country-search-input" 
+                            placeholder="국가명 또는 코드 입력 (예: 미국, US, Canada)"
+                        >
+                        <button class="country-search-btn" onclick="searchCountryRate()">검색</button>
+                    </div>
+                    <div class="country-search-hint">
+                        💡 주요 국가: 미국, 캐나다, 영국, 독일, 프랑스, 스페인, 이탈리아, 호주<br>
+                        🇪🇺 유럽 국가: BE, CZ, HU, NL, PL, PT, AT, FI, IE, SE, DK, GR, BG, HR, CY, EE, LV, LT, LU, MT, RO, SK, SI 등
+                    </div>
+                </div>
+                
+                <!-- 운임표 테이블 -->
+                <div id="standardTableContainer">
+                    <div class="no-data-message">
+                        <h3>📭 운임표 데이터 없음</h3>
+                        <p>eGS 운임표를 업로드하면 여기에 표시됩니다.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ⭐ Express 서브탭 콘텐츠 (활성화됨) -->
+            <div id="egsExpress" class="egs-subtab-content">
+                <!-- 검색 영역 -->
+                <div class="country-search-section">
+                    <div class="country-search-header">
+                        🔍 국가별 Express 배송비 검색
+                    </div>
+                    <div class="country-search-form">
+                        <input 
+                            type="text" 
+                            id="expressCountrySearchInput" 
+                            class="country-search-input" 
+                            placeholder="국가명 입력 (예: 미국, 콜롬비아, United States)"
+                        >
+                        <button class="country-search-btn" onclick="searchExpressCountryRate()">검색</button>
+                    </div>
+                    <div class="country-search-hint">
+                        💡 Zone을 클릭하면 해당 Zone의 국가 목록을 확인할 수 있습니다.<br>
+                        🌏 Express는 22개 Zone으로 분류되어 있습니다. (A, D-1, D-2, E, F, ... Y)
+                    </div>
+                </div>
+                
+                <!-- 운임표 테이블 -->
+                <div id="expressTableContainer">
+                    <div class="no-data-message">
+                        <h3>📭 운임표 데이터 없음</h3>
+                        <p>eGS 운임표를 업로드하면 여기에 표시됩니다.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EMS 서브탭 콘텐츠 -->
+            <div id="egsEms" class="egs-subtab-content">
+                <!-- 검색 영역 -->
+                <div class="country-search-section">
+                    <div class="country-search-header">
+                        🔍 국가별 EMS 배송비 검색
+                    </div>
+                    <div class="country-search-form">
+                        <input 
+                            type="text" 
+                            id="emsCountrySearchInput" 
+                            class="country-search-input" 
+                            placeholder="국가명 입력 (예: 미국, 콜롬비아, United States)"
+                        >
+                        <button class="country-search-btn" onclick="searchEmsCountryRate()">검색</button>
+                    </div>
+                    <div class="country-search-hint">
+                        💡 주요 국가: 미국, 캐나다, 영국, 독일, 프랑스, 스페인, 이탈리아, 호주<br>
+                        🌏 EMS는 파싱된 Zone 이름으로 검색됩니다.<br>
+                        <a href="https://ems.epost.go.kr/front.EmsApplyGetDeliveryNation.postal" target="_blank" style="color: #3b82f6; text-decoration: underline;">접수 가능 국가 확인하기</a>
+                    </div>
+                </div>
+                <!-- 운임표 테이블 -->
+                <div id="emsTableContainer">
+                    <div class="no-data-message">
+                        <h3>📭 운임표 데이터 없음</h3>
+                        <p>eGS 운임표를 업로드하면 여기에 표시됩니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================== -->
+    <!--         결과 모달 팝업             -->
+    <!-- ================================== -->
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📊 마진 계산 결과</h2>
+                <button class="modal-close" onclick="closeResultModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modalResultContent">
+                <!-- 여기에 동적으로 결과가 삽입됩니다 -->
+            </div>
+            <div class="modal-footer">
+                <button class="modal-confirm-btn" onclick="closeResultModal()">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================== -->
+    <!--         도움말 모달 팝업            -->
+    <!-- ================================== -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content help-modal-content">
+            <div class="modal-header">
+                <h2>📖 도움말 & ebay 수수료 체계</h2>
+                <button class="modal-close" onclick="closeHelpModal()">✕</button>
+            </div>
+            <div class="modal-body help-modal-body">
+                <div class="help-tabs">
+                    <button class="help-tab-btn active" onclick="switchHelpTab('usage')">사용 방법</button>
+                    <button class="help-tab-btn" onclick="switchHelpTab('fees')">수수료 체계</button>
+                </div>
+                <div id="helpUsageContent" class="help-tab-content active">
+                    <h3>🎯 계산기 사용 방법</h3>
+                    <ol style="line-height: 2; margin-left: 20px;">
+                        <li><strong>eGS 운임표 업로드:</strong> 오른쪽 상단 "📋 eGS 운임표 업로드" 버튼을 클릭하여 엑셀 파일을 업로드하세요.</li>
+                        <li><strong>제품 원가 입력:</strong> 제품 매입가와 배송비를 입력하세요.</li>
+                        <li><strong>상품 정보 입력:</strong> 실제 중량과 치수(가로/세로/높이)를 입력하세요. 부피중량이 자동 계산됩니다.</li>
+                        <li><strong>배송 서비스 선택:</strong> Standard 또는 Express를 선택하세요.</li>
+                        <li><strong>ebay 정보 입력:</strong> 목적지 국가, 카테고리, 스토어 구독 여부, 판매자 위치를 선택하세요.</li>
+                        <li><strong>목표 마진율 설정:</strong> 원하는 마진율(%)을 입력하세요.</li>
+                        <li><strong>광고비 설정 (선택):</strong> 광고를 체크하고 광고비율을 입력하면 판매가에 광고비가 포함됩니다.</li>
+                        <li><strong>계산 실행:</strong> "🧮 마진 계산하기" 버튼을 클릭하면 모달 팝업으로 상세 결과가 표시됩니다.</li>
+                    </ol>
+                    <div style="background: #eff6ff; padding: 16px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #3b82f6;">
+                        <h4 style="color: #1d4ed8; margin-bottom: 8px;">💡 팁</h4>
+                        <ul style="margin-left: 20px; line-height: 1.8;">
+                            <li>최소 판매가는 $20 이상을 권장합니다.</li>
+                            <li>VAT ID를 등록하면 수수료를 약 1.5% 절감할 수 있습니다.</li>
+                            <li>부피중량과 실제 중량 중 큰 값으로 배송비가 계산됩니다.</li>
+                            <li>광고비는 판매가 대비 비율로 계산되며, 일반적으로 3-10% 사이를 설정합니다.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div id="helpFeesContent" class="help-tab-content" style="display: none;">
+                    <iframe id="feesIframe" style="width: 100%; height: 70vh; border: none; border-radius: 8px;"></iframe>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-confirm-btn" onclick="closeHelpModal()">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 토스트 알림 -->
+    <div id="toast" class="toast"></div>
+
+    <!-- 외부 JS 라이브러리 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- JavaScript 파일 연결 -->
+    <script src="js/country-data.js"></script>
+    <script src="js/egs-utils.js"></script>
+	<script src="js/main.js"></script>
+	<script src="js/margin-calculator.js"></script>
+    <script src="js/sales-price-adjustment.js"></script>
+	<script src="js/egs-rates.js"></script>
+</body>
+</html>
