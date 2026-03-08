@@ -138,7 +138,7 @@ function calculateebayFee(sellingPriceUSD, category, hasStore) {
     };
 }
 
-function findTargetSellingPrice(totalCostUSD, targetMarginRate, category, hasStore, isKoreanSeller, adRate) {
+function findTargetSellingPrice(totalCostUSD, targetMarginRate, category, hasStore, isKoreanSeller, adRate, tariffRate = 0) {
     let low = totalCostUSD;
     let high = totalCostUSD * 5;
     let bestPrice = high;
@@ -198,6 +198,8 @@ function calculateMargin() {
     
     const adEnabled = document.getElementById('adEnabled').checked;
     const adRate = adEnabled ? (parseFloat(document.getElementById('adRate').value) || 0) : 0;
+    const applyTariff = document.getElementById('applyTariff').checked;
+    const tariffRate = applyTariff ? (parseFloat(document.getElementById('tariffRate').value) || 0) : 0;
 
     // getFinalWeight 함수에 destination 코드를 인자로 전달
     const finalWeight = getFinalWeight(destination);
@@ -214,19 +216,32 @@ function calculateMargin() {
         return;
     }
 
-    const totalCostKRW = parseFloat(productCost) + supplierShipping + packagingCost + egsShipping + egsShippingCost;
+    // EMS 긴급할증료 계산 (EMS 서비스 선택 시에만 적용)
+    // EMS destination은 한글 zone명(예: '미국')이므로 국가코드로 변환 후 조회
+    let emsSurcharge = 0;
+    if (currentServiceType === 'ems' && egsRatesData.emsSurchargeRates) {
+        const destCode = convertCountryData(destination, 'code') || destination;
+        const surchargePerKg = egsRatesData.emsSurchargeRates[destCode] || 0;
+        if (surchargePerKg > 0) {
+            const roundedWeight = Math.ceil(finalWeight / 0.25) * 0.25;
+            emsSurcharge = roundedWeight * surchargePerKg;
+        }
+    }
+
+    const totalCostKRW = parseFloat(productCost) + supplierShipping + packagingCost + egsShipping + egsShippingCost + emsSurcharge;
     const totalCostUSD = totalCostKRW / currentExchangeRate;
     const hasStore = storeType !== 'none';
     const targetMarginRate = parseFloat(targetMargin);
 
-    const requiredSellingPriceUSD = findTargetSellingPrice(totalCostUSD, targetMarginRate, category, hasStore, isKoreanSeller, adRate);
+    const requiredSellingPriceUSD = findTargetSellingPrice(totalCostUSD, targetMarginRate, category, hasStore, isKoreanSeller, adRate, tariffRate);
     const ebayFeeBreakdown = calculateebayFee(requiredSellingPriceUSD, category, hasStore);
-    
+
     const vatUSD = isKoreanSeller ? ebayFeeBreakdown.total * 0.1 : 0;
     const adCostUSD = adRate > 0 ? requiredSellingPriceUSD * (adRate / 100) : 0;
+    const tariffCostUSD = tariffRate > 0 ? requiredSellingPriceUSD * (tariffRate / 100) : 0;
     const ebayTotalFee = ebayFeeBreakdown.total + vatUSD + adCostUSD;
     const ebayPayoutUSD = requiredSellingPriceUSD - ebayTotalFee;
-    
+
     const payoneerWithdrawalFee = ebayPayoutUSD > 1.0 ? 1.00 : 0;
     const payoneerExchangeFee = ebayPayoutUSD * 0.012;
     const payoneerTotalFee = payoneerWithdrawalFee + payoneerExchangeFee;
@@ -243,6 +258,9 @@ function calculateMargin() {
         adEnabled,
         adRate,
         adCostUSD,
+        applyTariff,
+        tariffRate,
+        tariffCostUSD,
         ebayTotalFee,
         ebayPayoutUSD,
         payoneerWithdrawalFee,
@@ -255,6 +273,7 @@ function calculateMargin() {
         packagingCost,
         egsShipping,
         egsInternationalShipping: egsShippingCost,
+        emsSurcharge,
         totalCostKRW,
         netProfitKRW,
         actualMarginRate,
@@ -367,7 +386,9 @@ function saveCalculatorSettings() {
         isKoreanSeller: document.getElementById('isKoreanSeller').value,
         targetMargin: document.getElementById('targetMargin').value,
         adEnabled: document.getElementById('adEnabled').checked,
-        adRate: document.getElementById('adRate').value
+        adRate: document.getElementById('adRate').value,
+        applyTariff: document.getElementById('applyTariff').checked,
+        tariffRate: document.getElementById('tariffRate').value
     };
 
     localStorage.setItem('ebayCalculatorSettings', JSON.stringify(settings));
@@ -436,6 +457,15 @@ function loadCalculatorSettings() {
         if (settings.adEnabled && settings.adRate) {
             document.getElementById('adRate').disabled = false;
             document.getElementById('adRate').value = settings.adRate;
+        }
+
+        // 관세 설정 복원 (저장된 값이 없으면 기본값 유지)
+        if (settings.applyTariff !== undefined) {
+            document.getElementById('applyTariff').checked = settings.applyTariff;
+            if (settings.applyTariff && settings.tariffRate) {
+                document.getElementById('tariffRate').disabled = false;
+                document.getElementById('tariffRate').value = settings.tariffRate;
+            }
         }
     } catch (error) {
         console.error('설정 불러오기 오류:', error);

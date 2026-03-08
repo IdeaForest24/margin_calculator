@@ -44,23 +44,9 @@ function loadSalesPriceAdjustmentResults() {
     salesPriceAdjustmentData = results;
     lastLoadedResultsJson = storedResults;
 
-    // 광고비 단계 HTML (있을 경우만 표시)
-    const adStepHTML = results.adEnabled && results.adRate > 0 ? `
-        <div class="flow-arrow">→</div>
-        <div class="flow-step">
-            <div class="flow-step-header">📢 광고비</div>
-            <div class="flow-step-content">
-                <div class="flow-value main">
-                    <span>광고비 (${results.adRate}%)</span>
-                    <span class="value-number red">-$${results.adCostUSD.toFixed(2)}</span>
-                </div>
-            </div>
-        </div>
-    ` : '';
-
     // 요약 카드 형태로 결과 HTML 생성
     const summaryHTML = createSummaryCard(results, 'before');
-    const detailsHTML = createDetailedFlow(results, adStepHTML);
+    const detailsHTML = createDetailedFlow(results);
 
     const resultHTML = `
         <div class="comparison-container">
@@ -148,11 +134,30 @@ function addShippingInfoSections(results) {
                         <option value="ems">EMS</option>
                     </select>
                 </div>
+                <div class="form-group" id="listingTariffGroup" style="display: none; margin-top: 12px;">
+                    <label for="listingTariffRate" style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">관세율 (%)</label>
+                    <input type="number" id="listingTariffRate" step="0.1" placeholder="예: 10" style="width: 100%; padding: 10px; border: 2px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box;">
+                    <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">미국 리스팅 시 적용할 관세율을 입력하세요.</div>
+                </div>
             </div>
         </div>
     `;
 
     resultsContainer.insertAdjacentHTML('beforeend', shippingInfoHTML);
+
+    // 리스팅 국가 변경 시 관세 입력 영역 표시/숨김
+    const listingCountryEl = document.getElementById('listingCountry');
+    if (listingCountryEl) {
+        listingCountryEl.addEventListener('change', function() {
+            const tariffGroup = document.getElementById('listingTariffGroup');
+            if (this.value === 'US') {
+                tariffGroup.style.display = 'block';
+            } else {
+                tariffGroup.style.display = 'none';
+                document.getElementById('listingTariffRate').value = '';
+            }
+        });
+    }
 
     // 배송비 보정 버튼 추가
     const buttonHTML = `
@@ -233,6 +238,18 @@ function createSummaryCard(results, type) {
                 <span class="stat-label">권장 판매가 (유료)</span>
                 <span class="stat-value orange">${priceDisplayPaid}</span>
             </div>
+            ${results.serviceType === 'ems' && results.emsSurcharge > 0 ? `
+            <div class="summary-stat">
+                <span class="stat-label">EMS 할증료</span>
+                <span class="stat-value red">-${Math.round(results.emsSurcharge).toLocaleString()}원</span>
+            </div>
+            ` : ''}
+            ${results.applyTariff && results.tariffCostUSD > 0 ? `
+            <div class="summary-stat">
+                <span class="stat-label">관세 포함 판매가</span>
+                <span class="stat-value blue">$${(results.requiredSellingPriceUSD + results.tariffCostUSD).toFixed(2)}</span>
+            </div>
+            ` : ''}
             <div class="summary-stat ${highlightClass}">
                 <span class="stat-label">순수익</span>
                 <span class="stat-value ${results.netProfitKRW >= 0 ? 'green' : 'red'}">
@@ -249,8 +266,8 @@ function createSummaryCard(results, type) {
     `;
 }
 
-// 상세 flow HTML 생성
-function createDetailedFlow(results, adStepHTML) {
+// 상세 flow HTML 생성 (openResultModal과 동일한 구조)
+function createDetailedFlow(results) {
     // 보정 후일 경우 표시할 권장 판매가 결정 (배송비 차액 반영 전)
     const displaySellingPriceUSD = results.requiredSellingPriceBeforeAdjustmentUSD !== undefined
         ? results.requiredSellingPriceBeforeAdjustmentUSD
@@ -265,8 +282,33 @@ function createDetailedFlow(results, adStepHTML) {
         shippingDisplay = `${Math.round(results.egsInternationalShipping).toLocaleString()}원`;
     }
 
+    // ebay 수수료 합계 (광고비 포함)
+    const ebayTotalDisplayUSD = results.ebayFeeBreakdown.total + results.vatUSD + (results.adCostUSD || 0);
+
     return `
         <div class="horizontal-flow" style="margin-top: 20px;">
+
+            ${results.applyTariff && results.tariffCostUSD > 0 ? `
+            <div class="flow-step">
+                <div class="flow-step-header">🛃 관세</div>
+                <div class="flow-step-content">
+                    <div class="flow-value small">
+                        <span>관세율</span>
+                        <span class="value-number red">${results.tariffRate}%</span>
+                    </div>
+                    <div class="flow-value main">
+                        <span>관세 포함 판매가 (무료)</span>
+                        <span class="value-number blue">$${(displaySellingPriceUSD + results.tariffCostUSD).toFixed(2)}</span>
+                    </div>
+                    <div class="flow-value main" style="margin-top: 4px;">
+                        <span>관세 포함 판매가 (유료)</span>
+                        <span class="value-number orange">$${(displaySellingPriceUSD - (results.egsInternationalShipping / currentExchangeRate) + results.tariffCostUSD).toFixed(2)}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flow-arrow">→</div>
+            ` : ''}
+
             <div class="flow-step">
                 <div class="flow-step-header">💵 ebay 판매가</div>
                 <div class="flow-step-content">
@@ -307,14 +349,19 @@ function createDetailedFlow(results, adStepHTML) {
                         <span class="value-number red">-$${results.vatUSD.toFixed(2)}</span>
                     </div>
                     ` : ''}
+                    ${results.adEnabled && results.adCostUSD > 0 ? `
+                    <div style="border-top: 1px solid #e5e7eb; margin: 6px 0;"></div>
+                    <div class="flow-value small">
+                        <span>광고비 (${results.adRate}%)</span>
+                        <span class="value-number red">-$${results.adCostUSD.toFixed(2)}</span>
+                    </div>
+                    ` : ''}
                     <div class="flow-value total">
                         <span>총 수수료</span>
-                        <span class="value-number red">-$${(results.ebayFeeBreakdown.total + results.vatUSD).toFixed(2)}</span>
+                        <span class="value-number red">-$${ebayTotalDisplayUSD.toFixed(2)}</span>
                     </div>
                 </div>
             </div>
-
-            ${adStepHTML}
 
             <div class="flow-arrow">→</div>
 
@@ -331,7 +378,7 @@ function createDetailedFlow(results, adStepHTML) {
             <div class="flow-arrow">→</div>
 
             <div class="flow-step">
-                <div class="flow-step-header">📉 Payoneer 수수료</div>
+                <div class="flow-step-header">💵 Payoneer</div>
                 <div class="flow-step-content">
                     <div class="flow-value small">
                         <span>출금 수수료</span>
@@ -345,14 +392,7 @@ function createDetailedFlow(results, adStepHTML) {
                         <span>총 수수료</span>
                         <span class="value-number red">-$${results.payoneerTotalFee.toFixed(2)}</span>
                     </div>
-                </div>
-            </div>
-
-            <div class="flow-arrow">→</div>
-
-            <div class="flow-step">
-                <div class="flow-step-header">💵 Payoneer 정산</div>
-                <div class="flow-step-content">
+                    <div style="border-top: 1px solid #e5e7eb; margin: 6px 0;"></div>
                     <div class="flow-value main">
                         <span>입금액 (USD)</span>
                         <span class="value-number blue">$${results.finalReceiveUSD.toFixed(2)}</span>
@@ -389,6 +429,12 @@ function createDetailedFlow(results, adStepHTML) {
                         <span>국제 배송비</span>
                         <span class="value-number red">-${shippingDisplay}</span>
                     </div>
+                    ${results.serviceType === 'ems' && results.emsSurcharge > 0 ? `
+                    <div class="flow-value small">
+                        <span>할증료</span>
+                        <span class="value-number red">-${Math.round(results.emsSurcharge).toLocaleString()}원</span>
+                    </div>
+                    ` : ''}
                     <div class="flow-value total">
                         <span>총 원가</span>
                         <span class="value-number red">-${Math.round(results.totalCostKRW).toLocaleString()}원</span>
@@ -557,27 +603,51 @@ function getNewShippingCost(countryCode, serviceType, weight) {
 
 // 마진 재계산
 function recalculateMargin(originalData, newShippingCost, newDestination, newServiceType) {
-    // 새로운 총 원가 계산 (국제 배송비만 교체)
-    const newTotalCostKRW =
+    // 보정 후 EMS 할증료 계산
+    let newEmsSurcharge = 0;
+    if (newServiceType === 'ems' && egsRatesData && egsRatesData.emsSurchargeRates) {
+        const surchargePerKg = egsRatesData.emsSurchargeRates[newDestination] || 0;
+        if (surchargePerKg > 0) {
+            const roundedWeight = Math.ceil(originalData.finalWeight / 0.25) * 0.25;
+            newEmsSurcharge = roundedWeight * surchargePerKg;
+        }
+    }
+    const oldEmsSurcharge = originalData.emsSurcharge || 0;
+    const emsSurchargeDifference = newEmsSurcharge - oldEmsSurcharge; // KRW
+    const emsSurchargeDifferenceUSD = emsSurchargeDifference / currentExchangeRate;
+
+    // 보정 후 관세율 결정 (리스팅 국가가 미국일 때 관세 입력 필드에서 읽기)
+    let newTariffRate = 0;
+    if (newDestination === 'US') {
+        const listingTariffRateEl = document.getElementById('listingTariffRate');
+        if (listingTariffRateEl && listingTariffRateEl.value) {
+            newTariffRate = parseFloat(listingTariffRateEl.value) || 0;
+        }
+    }
+
+    // 새로운 기본 원가 계산 (국제 배송비 + 할증료 포함, 관세 제외)
+    const baseCostKRW =
         originalData.productCost +
         originalData.supplierShipping +
         originalData.packagingCost +
         originalData.egsShipping +
-        newShippingCost;
+        newShippingCost +
+        newEmsSurcharge;
 
-    const totalCostUSD = newTotalCostKRW / currentExchangeRate;
+    const totalCostUSD = baseCostKRW / currentExchangeRate;
 
-    // findTargetSellingPrice 함수 재사용 (배송비 차액 반영 전 계산)
+    // findTargetSellingPrice 함수 재사용 (관세 이진탐색 포함)
     const requiredSellingPriceBeforeAdjustmentUSD = findTargetSellingPrice(
         totalCostUSD,
         originalData.targetMarginRate,
         originalData.category,
         originalData.hasStore,
         originalData.isKoreanSeller,
-        originalData.adRate
+        originalData.adRate,
+        newTariffRate
     );
 
-    // eBay 수수료 계산 (배송비 차액 반영 전 판매가로 계산)
+    // eBay 수수료 계산
     const ebayFeeBreakdown = calculateebayFee(
         requiredSellingPriceBeforeAdjustmentUSD,
         originalData.category,
@@ -586,17 +656,20 @@ function recalculateMargin(originalData, newShippingCost, newDestination, newSer
 
     const vatUSD = originalData.isKoreanSeller ? ebayFeeBreakdown.total * 0.1 : 0;
     const adCostUSD = originalData.adRate > 0 ? requiredSellingPriceBeforeAdjustmentUSD * (originalData.adRate / 100) : 0;
+    const newTariffCostUSD = newTariffRate > 0 ? requiredSellingPriceBeforeAdjustmentUSD * (newTariffRate / 100) : 0;
     const ebayTotalFee = ebayFeeBreakdown.total + vatUSD + adCostUSD;
 
     // 배송비 차액 계산
     const shippingCostDifference = newShippingCost - originalData.egsInternationalShipping; // KRW
     const shippingCostDifferenceUSD = shippingCostDifference / currentExchangeRate;
 
-    // eBay Payout 계산 (배송비 차액 반영 전 판매가 기준)
+    // eBay Payout 계산
     const ebayPayoutUSD = requiredSellingPriceBeforeAdjustmentUSD - ebayTotalFee;
 
-    // 최종 권장 판매가 = 배송비 차액 반영 전 판매가 - 배송비 차액
-    const requiredSellingPriceUSD = requiredSellingPriceBeforeAdjustmentUSD - shippingCostDifferenceUSD;
+    // 최종 권장 판매가 = 배송비 차액 + 할증료 차액 반영
+    const requiredSellingPriceUSD = requiredSellingPriceBeforeAdjustmentUSD
+        - shippingCostDifferenceUSD
+        - emsSurchargeDifferenceUSD;
 
     // Payoneer 수수료 재계산
     const payoneerWithdrawalFee = ebayPayoutUSD > 1.0 ? 1.0 : 0;
@@ -605,6 +678,7 @@ function recalculateMargin(originalData, newShippingCost, newDestination, newSer
 
     const finalReceiveUSD = ebayPayoutUSD - payoneerTotalFee;
     const finalReceiveKRW = finalReceiveUSD * currentExchangeRate;
+    const newTotalCostKRW = baseCostKRW;
     const netProfitKRW = finalReceiveKRW - newTotalCostKRW;
     const actualMarginRate = requiredSellingPriceUSD > 0 ? (netProfitKRW / (requiredSellingPriceUSD * currentExchangeRate)) * 100 : 0;
 
@@ -614,6 +688,11 @@ function recalculateMargin(originalData, newShippingCost, newDestination, newSer
         destination: newDestination,
         serviceType: newServiceType,
         egsInternationalShipping: newShippingCost,
+        emsSurcharge: newEmsSurcharge,
+        emsSurchargeDifference,
+        applyTariff: newTariffRate > 0,
+        tariffRate: newTariffRate,
+        tariffCostUSD: newTariffCostUSD,
         totalCostKRW: newTotalCostKRW,
         requiredSellingPriceUSD,
         requiredSellingPriceBeforeAdjustmentUSD, // 취소선 표시용
@@ -648,22 +727,8 @@ function displayAdjustedResults(results) {
         existingAfterColumnWrapper.remove();
     }
 
-    // 광고비 단계 HTML
-    const adStepHTML = results.adEnabled && results.adRate > 0 ? `
-        <div class="flow-arrow">→</div>
-        <div class="flow-step">
-            <div class="flow-step-header">📢 광고비</div>
-            <div class="flow-step-content">
-                <div class="flow-value main">
-                    <span>광고비 (${results.adRate}%)</span>
-                    <span class="value-number red">-$${results.adCostUSD.toFixed(2)}</span>
-                </div>
-            </div>
-        </div>
-    ` : '';
-
     const summaryHTML = createSummaryCard(results, 'after');
-    const detailsHTML = createDetailedFlow(results, adStepHTML);
+    const detailsHTML = createDetailedFlow(results);
 
     const afterCardHTML = `
         <div class="summary-card after" id="afterCard">

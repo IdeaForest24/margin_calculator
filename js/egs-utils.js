@@ -6,7 +6,8 @@ function parseExcelWorkbook(workbook) {
     const result = {
         standard: {},
         express: {}, expressZones: {},
-        ems: {}
+        ems: {},
+        emsSurchargeRates: {}
     };
 
     workbook.SheetNames.forEach(sheetName => {
@@ -46,6 +47,9 @@ function parseExcelWorkbook(workbook) {
                 case 'EMS':
                     Object.assign(result.ems, parseEms(data));
                     break;
+                case 'EMS_Surcharge':
+                    Object.assign(result.emsSurchargeRates, parseEmsSurcharge(data));
+                    break;
                 default:
                     console.log(`  -> 알려지지 않은 시트 타입입니다: ${sheetType}`);
             }
@@ -73,6 +77,10 @@ function identifySheetType(sheetName, data) {
         return 'Express';
     }
     
+    if (name.includes('ems') && (name.includes('surcharge') || name.includes('수수료'))) {
+        return 'EMS_Surcharge';
+    }
+
     if (name.includes('ems') && !name.includes('surcharge') && !name.includes('zone') && !name.includes('수수료')) {
         return 'EMS';
     }
@@ -364,6 +372,28 @@ function parseEms(data) {
 
     console.log(`  -> EMS 파싱 완료. ${successCount}개 중량 구간, ${Object.keys(results).length}개 Zone 데이터.`);
     
+    return results;
+}
+
+function parseEmsSurcharge(data) {
+    const results = {};
+
+    console.log(`  -> EMS 긴급할증료 파싱 시작. 총 ${data.length}개 행 데이터`);
+
+    // 1행: 날짜 텍스트 (무시), 2행: 헤더 (국가명 / 국가코드 / 수수료 (kg당)), 3행부터: 데이터
+    for (let i = 2; i < data.length; i++) {
+        const row = data[i];
+        if (!row || row.length < 3) continue;
+
+        const countryCode = String(row[1] || '').trim().toUpperCase();
+        const surcharge = cleanNumber(row[2]);
+
+        if (!countryCode || isNaN(surcharge) || surcharge < 0) continue;
+
+        results[countryCode] = Math.round(surcharge);
+    }
+
+    console.log(`  -> EMS 긴급할증료 파싱 완료. ${Object.keys(results).length}개 국가 데이터 발견.`);
     return results;
 }
 

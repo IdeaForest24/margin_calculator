@@ -16,6 +16,8 @@ function openEgsSubTab(event, tabName) {
         renderExpressTable();
     } else if (tabName === 'egsEms') {
         renderEmsTable();
+    } else if (tabName === 'egsEmsSurcharge') {
+        renderEmsSurchargeTable();
     }
 }
 
@@ -558,6 +560,143 @@ function renderExpressTable() {
     container.innerHTML = tableHTML;
 }
 
+function searchEmsSurchargeCountryRate() {
+    const searchInput = document.getElementById('emsSurchargeCountrySearchInput').value.trim();
+
+    if (!searchInput) {
+        alert('국가명 또는 코드를 입력해주세요.');
+        return;
+    }
+
+    if (!egsRatesData || !egsRatesData.emsSurchargeRates || Object.keys(egsRatesData.emsSurchargeRates).length === 0) {
+        showSearchResultModal('❌ 데이터 없음', '운임표 파일을 먼저 업로드해주세요.');
+        return;
+    }
+
+    // 국가 코드 또는 국가명으로 코드 변환
+    let countryCode = null;
+    let countryData = findCountryByCode(searchInput);
+    if (!countryData) {
+        countryData = findCountryByName(searchInput);
+    }
+    if (countryData) {
+        countryCode = countryData.code;
+    } else if (typeof convertCountryData === 'function') {
+        countryCode = convertCountryData(searchInput, 'code');
+    }
+
+    if (!countryCode || !egsRatesData.emsSurchargeRates[countryCode]) {
+        showSearchResultModal(
+            '❌ 검색 결과 없음',
+            `"${searchInput}"에 해당하는 EMS 할증료 데이터가 없습니다.<br><br>` +
+            `💡 검색 방법:<br>` +
+            `- 국가 코드: US, CA, GB, AU<br>` +
+            `- 한글명: 미국, 캐나다, 영국, 호주<br>` +
+            `- 영문명: United States, Canada, United Kingdom`
+        );
+        return;
+    }
+
+    const surcharge = egsRatesData.emsSurchargeRates[countryCode];
+    const name = getCountryName(countryCode);
+
+    const modal = document.createElement('div');
+    modal.className = 'search-modal';
+    modal.innerHTML = `
+        <div class="search-modal-content">
+            <div class="search-modal-header">
+                <h3>💰 EMS 할증료 검색 결과</h3>
+                <button class="search-modal-close" onclick="closeSearchModal()">&times;</button>
+            </div>
+            <div class="search-modal-body">
+                <table class="country-rate-table">
+                    <thead>
+                        <tr>
+                            <th>국가명</th>
+                            <th>국가코드</th>
+                            <th>kg당 수수료 (원)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>${name}</td>
+                            <td>${countryCode}</td>
+                            <td class="price-cell">${surcharge.toLocaleString()}원</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="search-modal-footer">
+                <button class="search-modal-btn" onclick="closeSearchModal()">닫기</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    setTimeout(() => modal.classList.add('show'), 10);
+}
+
+function renderEmsSurchargeTable() {
+    const container = document.getElementById('emsSurchargeTableContainer');
+
+    if (!egsRatesData || !egsRatesData.emsSurchargeRates || Object.keys(egsRatesData.emsSurchargeRates).length === 0) {
+        container.innerHTML = `
+            <div class="no-data-message">
+                <h3>📭 EMS 할증료 데이터 없음</h3>
+                <p>마진 계산기 탭에서 eGS 운임표를 업로드하면 여기에 표시됩니다.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const surchargeData = egsRatesData.emsSurchargeRates;
+    const defaultCodes = ['DE', 'US', 'ES', 'GB', 'FR', 'AU'];
+
+    // 기본 6개국 중 데이터 있는 것만 표시, 한글명 가나다순 정렬
+    const displayCodes = defaultCodes
+        .filter(code => surchargeData[code] !== undefined)
+        .sort((a, b) => getCountryName(a).localeCompare(getCountryName(b), 'ko'));
+
+    if (displayCodes.length === 0) {
+        container.innerHTML = `
+            <div class="no-data-message">
+                <h3>📭 표시할 EMS 할증료 데이터 없음</h3>
+                <p>업로드된 파일에 주요 국가(독일, 미국, 스페인, 영국, 프랑스, 호주)의 할증료 정보가 없습니다.</p>
+            </div>
+        `;
+        return;
+    }
+
+    let tableHTML = `
+        <div class="rates-table-wrapper">
+            <table class="rates-table">
+                <thead>
+                    <tr>
+                        <th>국가명 (한글)</th>
+                        <th>국가코드</th>
+                        <th>kg당 수수료 (원)</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+    displayCodes.forEach(code => {
+        const name = getCountryName(code);
+        const surcharge = surchargeData[code];
+        tableHTML += `
+                    <tr>
+                        <td>${name}</td>
+                        <td>${code}</td>
+                        <td class="price-cell">${surcharge.toLocaleString()}원</td>
+                    </tr>`;
+    });
+
+    tableHTML += `
+                </tbody>
+            </table>
+        </div>`;
+
+    container.innerHTML = tableHTML;
+}
+
 function renderEmsTable() {
     const container = document.getElementById('emsTableContainer');
     
@@ -664,6 +803,15 @@ window.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    const emsSurchargeSearchInput = document.getElementById('emsSurchargeCountrySearchInput');
+    if (emsSurchargeSearchInput) {
+        emsSurchargeSearchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchEmsSurchargeCountryRate();
+            }
+        });
+    }
 });
 
 window.updateEgsRatesTables = function() {
@@ -671,7 +819,8 @@ window.updateEgsRatesTables = function() {
     const standardSubTab = document.getElementById('egsStandard');
     const expressSubTab = document.getElementById('egsExpress');
     const emsSubTab = document.getElementById('egsEms');
-    
+    const emsSurchargeSubTab = document.getElementById('egsEmsSurcharge');
+
     if (egsTab.classList.contains('active')) {
         if (standardSubTab.classList.contains('active')) {
             renderStandardTable();
@@ -679,6 +828,8 @@ window.updateEgsRatesTables = function() {
             renderExpressTable();
         } else if (emsSubTab.classList.contains('active')) {
             renderEmsTable();
+        } else if (emsSurchargeSubTab.classList.contains('active')) {
+            renderEmsSurchargeTable();
         }
     }
 };

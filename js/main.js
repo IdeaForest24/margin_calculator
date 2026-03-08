@@ -28,6 +28,37 @@ function isEuropeanCountry(countryCode) {
 }
 
 
+function toggleTariffInput() {
+    const applyTariff = document.getElementById('applyTariff').checked;
+    const tariffRateInput = document.getElementById('tariffRate');
+    tariffRateInput.disabled = !applyTariff;
+    if (!applyTariff) {
+        tariffRateInput.value = '';
+    }
+}
+
+// EMS + 미국 조합 시 관세 자동 설정, 그 외 조합에서는 초기화
+function checkAutoTariff() {
+    const applyTariffEl = document.getElementById('applyTariff');
+    const tariffRateEl = document.getElementById('tariffRate');
+    if (!applyTariffEl || !tariffRateEl) return;
+
+    if (currentServiceType === 'ems') {
+        const dest = document.getElementById('emsDestinationPrimary').value;
+        if (dest === '미국') {
+            applyTariffEl.checked = true;
+            tariffRateEl.disabled = false;
+            tariffRateEl.value = '10';
+            return;
+        }
+    }
+
+    // EMS+미국 이외의 모든 조합: 초기화
+    applyTariffEl.checked = false;
+    tariffRateEl.disabled = true;
+    tariffRateEl.value = '';
+}
+
 // EMS 서비스 Zone 드롭다운
 function populateEmsDestinations() {
     const primarySelect = document.getElementById('emsDestinationPrimary');
@@ -49,6 +80,7 @@ function populateEmsDestinations() {
         // EMS의 경우 현재는 secondary 선택이 없으므로 항상 비활성화
         secondarySelect.innerHTML = '<option value="">국가 선택</option>';
         secondarySelect.disabled = true;
+        checkAutoTariff();
     };
 }
 
@@ -495,6 +527,7 @@ function toggleServiceType(type) {
     }
 
     updateWeightInfo();
+    checkAutoTariff();
 }
 
 // [수정] updateWeightInfo 함수
@@ -575,21 +608,33 @@ function openResultModal(results) {
     const modal = document.getElementById('resultModal');
     const modalContent = document.getElementById('modalResultContent');
 
-    const adStepHTML = results.adEnabled && results.adRate > 0 ? `
-        <div class="flow-arrow">→</div>
-        <div class="flow-step">
-            <div class="flow-step-header">📢 광고비</div>
-            <div class="flow-step-content">
-                <div class="flow-value main">
-                    <span>광고비 (${results.adRate}%)</span>
-                    <span class="value-number red">-$${results.adCostUSD.toFixed(2)}</span>
-                </div>
-            </div>
-        </div>
-    ` : '';
-    
+    // eBay 수수료 합계: 기본 수수료 + VAT + 광고비
+    const ebayTotalDisplayUSD = results.ebayFeeBreakdown.total + results.vatUSD + (results.adCostUSD || 0);
+
     const resultHTML = `
         <div class="horizontal-flow">
+
+            ${results.applyTariff && results.tariffCostUSD > 0 ? `
+            <div class="flow-step">
+                <div class="flow-step-header">🛃 관세</div>
+                <div class="flow-step-content">
+                    <div class="flow-value small">
+                        <span>관세율</span>
+                        <span class="value-number red">${results.tariffRate}%</span>
+                    </div>
+                    <div class="flow-value main">
+                        <span>관세 포함 판매가 (무료)</span>
+                        <span class="value-number blue">$${(results.requiredSellingPriceUSD + results.tariffCostUSD).toFixed(2)}</span>
+                    </div>
+                    <div class="flow-value main" style="margin-top: 4px;">
+                        <span>관세 포함 판매가 (유료)</span>
+                        <span class="value-number orange">$${(results.requiredSellingPriceUSD - (results.egsInternationalShipping / currentExchangeRate) + results.tariffCostUSD).toFixed(2)}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flow-arrow">→</div>
+            ` : ''}
+
             <div class="flow-step">
                 <div class="flow-step-header">💵 ebay 판매가</div>
                 <div class="flow-step-content">
@@ -630,14 +675,19 @@ function openResultModal(results) {
                         <span class="value-number red">-$${results.vatUSD.toFixed(2)}</span>
                     </div>
                     ` : ''}
+                    ${results.adEnabled && results.adCostUSD > 0 ? `
+                    <div style="border-top: 1px solid #e5e7eb; margin: 6px 0;"></div>
+                    <div class="flow-value small">
+                        <span>광고비 (${results.adRate}%)</span>
+                        <span class="value-number red">-$${results.adCostUSD.toFixed(2)}</span>
+                    </div>
+                    ` : ''}
                     <div class="flow-value total">
                         <span>총 수수료</span>
-                        <span class="value-number red">-$${(results.ebayFeeBreakdown.total + results.vatUSD).toFixed(2)}</span>
+                        <span class="value-number red">-$${ebayTotalDisplayUSD.toFixed(2)}</span>
                     </div>
                 </div>
             </div>
-
-            ${adStepHTML}
 
             <div class="flow-arrow">→</div>
 
@@ -654,7 +704,7 @@ function openResultModal(results) {
             <div class="flow-arrow">→</div>
 
             <div class="flow-step">
-                <div class="flow-step-header">📉 Payoneer 수수료</div>
+                <div class="flow-step-header">💵 Payoneer</div>
                 <div class="flow-step-content">
                     <div class="flow-value small">
                         <span>출금 수수료</span>
@@ -668,14 +718,7 @@ function openResultModal(results) {
                         <span>총 수수료</span>
                         <span class="value-number red">-$${results.payoneerTotalFee.toFixed(2)}</span>
                     </div>
-                </div>
-            </div>
-
-            <div class="flow-arrow">→</div>
-
-            <div class="flow-step">
-                <div class="flow-step-header">💵 Payoneer 정산</div>
-                <div class="flow-step-content">
+                    <div style="border-top: 1px solid #e5e7eb; margin: 6px 0;"></div>
                     <div class="flow-value main">
                         <span>입금액 (USD)</span>
                         <span class="value-number blue">$${results.finalReceiveUSD.toFixed(2)}</span>
@@ -712,6 +755,12 @@ function openResultModal(results) {
                         <span>국제 배송비</span>
                         <span class="value-number red">-${Math.round(results.egsInternationalShipping).toLocaleString()}원</span>
                     </div>
+                    ${results.serviceType === 'ems' && results.emsSurcharge > 0 ? `
+                    <div class="flow-value small">
+                        <span>할증료</span>
+                        <span class="value-number red">-${Math.round(results.emsSurcharge).toLocaleString()}원</span>
+                    </div>
+                    ` : ''}
                     <div class="flow-value total">
                         <span>총 원가</span>
                         <span class="value-number red">-${Math.round(results.totalCostKRW).toLocaleString()}원</span>
