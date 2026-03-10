@@ -139,23 +139,25 @@
                                 <div class="form-group"><label for="storeType">ebay 스토어 구독</label><select id="storeType"><option value="none">없음/Starter</option><option value="basic">Basic 이상</option></select></div>
                                 <div class="form-group"><label for="isKoreanSeller">판매자 위치</label><select id="isKoreanSeller"><option value="true">한국 (VAT 10%)</option><option value="false">해외</option></select></div>
                             </div>
-                            <div class="form-grid" style="margin-top: 16px; grid-template-columns: 1fr 1fr 1fr;">
+                            <div class="form-grid" style="margin-top: 16px;">
                                 <div class="form-group"><label for="targetMargin">목표 마진율 (%)</label><input type="number" step="1" id="targetMargin" placeholder="예: 20"></div>
-                                <div class="form-group">
-                                    <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                        <input type="checkbox" id="adEnabled" onchange="toggleAdInput()" style="width: auto; margin: 0;">
-                                        <span>광고</span>
-                                    </label>
-                                    <input type="number" step="0.1" id="adRate" placeholder="예: 5" disabled>
-                                    <div class="help-text">광고비율 (판매가의 %)</div>
-                                </div>
-                                <div class="form-group">
-                                    <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                        <input type="checkbox" id="applyTariff" onchange="toggleTariffInput()" style="width: auto; margin: 0;">
-                                        <span>관세</span>
-                                    </label>
-                                    <input type="number" step="0.1" id="tariffRate" placeholder="예: 10" disabled>
-                                    <div class="help-text">관세율 (판매가의 %)</div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <div class="form-group">
+                                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                            <input type="checkbox" id="adEnabled" onchange="toggleAdInput()" style="width: auto; margin: 0;">
+                                            <span>광고</span>
+                                        </label>
+                                        <input type="number" step="0.1" id="adRate" placeholder="예: 5" disabled>
+                                        <div class="help-text">광고비율 (판매가의 %)</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                            <input type="checkbox" id="applyTariff" onchange="toggleTariffInput()" style="width: auto; margin: 0;">
+                                            <span>관세</span>
+                                        </label>
+                                        <input type="number" step="0.1" id="tariffRate" placeholder="예: 10" disabled>
+                                        <div class="help-text">관세율 (판매가의 %)</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
