@@ -80,7 +80,6 @@ function populateEmsDestinations() {
         // EMS의 경우 현재는 secondary 선택이 없으므로 항상 비활성화
         secondarySelect.innerHTML = '<option value="">국가 선택</option>';
         secondarySelect.disabled = true;
-        checkAutoTariff();
     };
 }
 
@@ -527,7 +526,6 @@ function toggleServiceType(type) {
     }
 
     updateWeightInfo();
-    checkAutoTariff();
 }
 
 // [수정] updateWeightInfo 함수

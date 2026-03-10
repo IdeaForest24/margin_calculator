@@ -215,14 +215,28 @@ function createSummaryCard(results, type) {
         `;
     }
 
-    // 보정 후 카드일 경우 취소선 표시
-    const priceDisplayFree = type === 'after' && results.requiredSellingPriceBeforeAdjustmentUSD !== undefined
-        ? `<span style="text-decoration: line-through; color: #9ca3af; margin-right: 8px;">$${results.requiredSellingPriceBeforeAdjustmentUSD.toFixed(2)}</span> $${results.requiredSellingPriceUSD.toFixed(2)}`
-        : `$${results.requiredSellingPriceUSD.toFixed(2)}`;
+    // 최종 가격 (관세 포함 여부 반영)
+    const hasTariff = results.applyTariff && results.tariffCostUSD > 0;
+    const finalFreePrice = hasTariff
+        ? results.requiredSellingPriceUSD + results.tariffCostUSD
+        : results.requiredSellingPriceUSD;
+    const finalPaidPrice = finalFreePrice - (results.egsInternationalShipping / currentExchangeRate);
 
-    const priceDisplayPaid = type === 'after' && results.requiredSellingPriceBeforeAdjustmentUSD !== undefined
-        ? `<span style="text-decoration: line-through; color: #9ca3af; margin-right: 8px;">$${(results.requiredSellingPriceBeforeAdjustmentUSD - (results.egsInternationalShipping / currentExchangeRate)).toFixed(2)}</span> $${(results.requiredSellingPriceUSD - (results.egsInternationalShipping / currentExchangeRate)).toFixed(2)}`
-        : `$${(results.requiredSellingPriceUSD - (results.egsInternationalShipping / currentExchangeRate)).toFixed(2)}`;
+    // 보정 후 카드일 경우 취소선 표시
+    const beforeFreePrice = results.requiredSellingPriceBeforeAdjustmentUSD !== undefined
+        ? (hasTariff ? results.requiredSellingPriceBeforeAdjustmentUSD + results.tariffCostUSD : results.requiredSellingPriceBeforeAdjustmentUSD)
+        : null;
+    const beforePaidPrice = beforeFreePrice !== null
+        ? beforeFreePrice - (results.egsInternationalShipping / currentExchangeRate)
+        : null;
+
+    const priceDisplayFree = type === 'after' && beforeFreePrice !== null
+        ? `<span style="text-decoration: line-through; color: #9ca3af; margin-right: 8px;">$${beforeFreePrice.toFixed(2)}</span> $${finalFreePrice.toFixed(2)}`
+        : `$${finalFreePrice.toFixed(2)}`;
+
+    const priceDisplayPaid = type === 'after' && beforePaidPrice !== null
+        ? `<span style="text-decoration: line-through; color: #9ca3af; margin-right: 8px;">$${beforePaidPrice.toFixed(2)}</span> $${finalPaidPrice.toFixed(2)}`
+        : `$${finalPaidPrice.toFixed(2)}`;
 
     return `
         <div class="summary-card-header">
@@ -238,18 +252,6 @@ function createSummaryCard(results, type) {
                 <span class="stat-label">권장 판매가 (유료)</span>
                 <span class="stat-value orange">${priceDisplayPaid}</span>
             </div>
-            ${results.serviceType === 'ems' && results.emsSurcharge > 0 ? `
-            <div class="summary-stat">
-                <span class="stat-label">EMS 할증료</span>
-                <span class="stat-value red">-${Math.round(results.emsSurcharge).toLocaleString()}원</span>
-            </div>
-            ` : ''}
-            ${results.applyTariff && results.tariffCostUSD > 0 ? `
-            <div class="summary-stat">
-                <span class="stat-label">관세 포함 판매가</span>
-                <span class="stat-value blue">$${(results.requiredSellingPriceUSD + results.tariffCostUSD).toFixed(2)}</span>
-            </div>
-            ` : ''}
             <div class="summary-stat ${highlightClass}">
                 <span class="stat-label">순수익</span>
                 <span class="stat-value ${results.netProfitKRW >= 0 ? 'green' : 'red'}">
@@ -297,11 +299,11 @@ function createDetailedFlow(results) {
                         <span class="value-number red">${results.tariffRate}%</span>
                     </div>
                     <div class="flow-value main">
-                        <span>관세 포함 판매가 (무료)</span>
+                        <span>관세 포함 (무료)</span>
                         <span class="value-number blue">$${(displaySellingPriceUSD + results.tariffCostUSD).toFixed(2)}</span>
                     </div>
                     <div class="flow-value main" style="margin-top: 4px;">
-                        <span>관세 포함 판매가 (유료)</span>
+                        <span>관세 포함 (유료)</span>
                         <span class="value-number orange">$${(displaySellingPriceUSD - (results.egsInternationalShipping / currentExchangeRate) + results.tariffCostUSD).toFixed(2)}</span>
                     </div>
                 </div>
@@ -614,7 +616,7 @@ function recalculateMargin(originalData, newShippingCost, newDestination, newSer
     }
     const oldEmsSurcharge = originalData.emsSurcharge || 0;
     const emsSurchargeDifference = newEmsSurcharge - oldEmsSurcharge; // KRW
-    const emsSurchargeDifferenceUSD = emsSurchargeDifference / currentExchangeRate;
+
 
     // 보정 후 관세율 결정 (리스팅 국가가 미국일 때 관세 입력 필드에서 읽기)
     let newTariffRate = 0;
@@ -666,10 +668,9 @@ function recalculateMargin(originalData, newShippingCost, newDestination, newSer
     // eBay Payout 계산
     const ebayPayoutUSD = requiredSellingPriceBeforeAdjustmentUSD - ebayTotalFee;
 
-    // 최종 권장 판매가 = 배송비 차액 + 할증료 차액 반영
+    // 최종 권장 판매가 = 배송비 차액만 반영 (할증료 차액은 원가에서 처리)
     const requiredSellingPriceUSD = requiredSellingPriceBeforeAdjustmentUSD
-        - shippingCostDifferenceUSD
-        - emsSurchargeDifferenceUSD;
+        - shippingCostDifferenceUSD;
 
     // Payoneer 수수료 재계산
     const payoneerWithdrawalFee = ebayPayoutUSD > 1.0 ? 1.0 : 0;

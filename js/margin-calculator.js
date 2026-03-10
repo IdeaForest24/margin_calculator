@@ -294,6 +294,12 @@ function displayResultsInUI(results) {
     const resultContent = document.getElementById('result-ui-content');
     resultContent.classList.remove('result-placeholder-style');
 
+    const hasTariff = results.applyTariff && results.tariffCostUSD > 0;
+    const finalFreePrice = hasTariff
+        ? results.requiredSellingPriceUSD + results.tariffCostUSD
+        : results.requiredSellingPriceUSD;
+    const finalPaidPrice = finalFreePrice - (results.egsInternationalShipping / currentExchangeRate);
+
     const resultHTML = `
         <div class="horizontal-flow summary-flow">
             <div class="flow-step">
@@ -301,11 +307,11 @@ function displayResultsInUI(results) {
                 <div class="flow-step-content">
                     <div class="flow-value main">
                         <span>권장 판매가 (무료)</span>
-                        <span class="value-number blue">$${results.requiredSellingPriceUSD.toFixed(2)}</span>
+                        <span class="value-number blue">$${finalFreePrice.toFixed(2)}</span>
                     </div>
                     <div class="flow-value main" style="margin-top: 8px;">
                         <span>권장 판매가 (유료)</span>
-                        <span class="value-number orange">$${(results.requiredSellingPriceUSD - (results.egsInternationalShipping / currentExchangeRate)).toFixed(2)}</span>
+                        <span class="value-number orange">$${finalPaidPrice.toFixed(2)}</span>
                     </div>
                     <div style="font-size: 12px; color: #6b7280; margin-top: 8px; padding: 8px; background: #f9fafb; border-radius: 4px;">
                         💡 유료배송 = 무료배송가 - 국제배송비 ($${(results.egsInternationalShipping / currentExchangeRate).toFixed(2)})
@@ -459,12 +465,15 @@ function loadCalculatorSettings() {
             document.getElementById('adRate').value = settings.adRate;
         }
 
-        // 관세 설정 복원 (저장된 값이 없으면 기본값 유지)
+        // 관세 설정 복원
         if (settings.applyTariff !== undefined) {
             document.getElementById('applyTariff').checked = settings.applyTariff;
-            if (settings.applyTariff && settings.tariffRate) {
+            if (settings.applyTariff) {
                 document.getElementById('tariffRate').disabled = false;
-                document.getElementById('tariffRate').value = settings.tariffRate;
+                document.getElementById('tariffRate').value = settings.tariffRate || '';
+            } else {
+                document.getElementById('tariffRate').disabled = true;
+                document.getElementById('tariffRate').value = '';
             }
         }
     } catch (error) {
