@@ -621,11 +621,11 @@ function openResultModal(results) {
                         <span class="value-number red">${results.tariffRate}%</span>
                     </div>
                     <div class="flow-value main">
-                        <span>관세 포함 판매가 (무료)</span>
+                        <span>관세 포함 (무료)</span>
                         <span class="value-number blue">$${(results.requiredSellingPriceUSD + results.tariffCostUSD).toFixed(2)}</span>
                     </div>
                     <div class="flow-value main" style="margin-top: 4px;">
-                        <span>관세 포함 판매가 (유료)</span>
+                        <span>관세 포함 (유료)</span>
                         <span class="value-number orange">$${(results.requiredSellingPriceUSD - (results.egsInternationalShipping / currentExchangeRate) + results.tariffCostUSD).toFixed(2)}</span>
                     </div>
                 </div>
