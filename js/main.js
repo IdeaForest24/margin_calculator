@@ -2,6 +2,7 @@
 
 // 전역 상태
 let currentExchangeRate = 1300;
+let currentCnyRate = 185; // CNY→KRW 기본값
 let egsRatesData = null;
 let currentServiceType = 'standard';
 let statusTimeout;
@@ -221,6 +222,12 @@ function openTab(event, tabName) {
     document.getElementById(tabName).classList.add('active');
     document.querySelector(`.tab-link[onclick*="'${tabName}'"]`).classList.add('active');
 
+    // 탭 전환 시 탭 네비게이션 상단으로 스크롤 고정
+    const tabsEl = document.querySelector('.tabs');
+    if (tabsEl) {
+        tabsEl.scrollIntoView({ block: 'start', behavior: 'instant' });
+    }
+
     // 판매가 보정 탭이 활성화될 때 결과를 로드
     if (tabName === 'salesPriceAdjustment' && typeof loadSalesPriceAdjustmentResults === 'function') {
         loadSalesPriceAdjustmentResults();
@@ -269,6 +276,16 @@ async function fetchExchangeRate(forceRefresh = false) {
                 statusIndicator.style.backgroundColor = '#10b981'; // 녹색
             }
 
+            // CNY 캐시 복원
+            const cachedCnyRate = localStorage.getItem('cachedCnyRate');
+            if (cachedCnyRate) {
+                currentCnyRate = parseFloat(cachedCnyRate);
+                const cnyRateDisplay = document.getElementById('cnyRateDisplay');
+                if (cnyRateDisplay) {
+                    cnyRateDisplay.textContent = `1 CNY = ${currentCnyRate.toFixed(1)}원`;
+                }
+            }
+
             console.log('✅ 캐시된 환율 사용:', currentExchangeRate);
             return;
         }
@@ -292,17 +309,17 @@ async function fetchExchangeRate(forceRefresh = false) {
         {
             name: 'ExchangeRate-API',
             url: 'https://api.exchangerate-api.com/v4/latest/USD',
-            parse: (data) => data.rates?.KRW
+            parse: (data) => ({ krw: data.rates?.KRW, cny: data.rates?.CNY })
         },
         {
             name: 'ExchangeRate-API (Proxy)',
             url: 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.exchangerate-api.com/v4/latest/USD'),
-            parse: (data) => data.rates?.KRW
+            parse: (data) => ({ krw: data.rates?.KRW, cny: data.rates?.CNY })
         },
         {
             name: 'Open Exchange Rates (Free)',
             url: 'https://open.er-api.com/v6/latest/USD',
-            parse: (data) => data.rates?.KRW
+            parse: (data) => ({ krw: data.rates?.KRW, cny: data.rates?.CNY })
         }
     ];
 
@@ -319,7 +336,8 @@ async function fetchExchangeRate(forceRefresh = false) {
             }
 
             const data = await response.json();
-            const rate = api.parse(data);
+            const parsed = api.parse(data);
+            const rate = parsed.krw;
 
             if (rate && rate > 0) {
                 currentExchangeRate = rate;
@@ -336,6 +354,18 @@ async function fetchExchangeRate(forceRefresh = false) {
                 // 상태 표시: 좋음 - 녹색
                 if (statusIndicator) {
                     statusIndicator.style.backgroundColor = '#10b981'; // 녹색
+                }
+
+                // CNY 환율 처리
+                if (parsed.cny && parsed.cny > 0) {
+                    currentCnyRate = rate / parsed.cny;
+                    localStorage.setItem('cachedCnyRate', currentCnyRate.toString());
+                    localStorage.setItem('cachedCnyRateTime', Date.now().toString());
+                    const cnyRateDisplay = document.getElementById('cnyRateDisplay');
+                    if (cnyRateDisplay) {
+                        cnyRateDisplay.textContent = `1 CNY = ${currentCnyRate.toFixed(1)}원`;
+                    }
+                    console.log(`✅ CNY 환율 로드 성공:`, currentCnyRate);
                 }
 
                 console.log(`✅ 환율 로드 성공 (${api.name}):`, currentExchangeRate);
