@@ -1,0 +1,70 @@
+/* css/china-margin-calculator.css */
+/* 마진 계산기(중국) 탭 전용 스타일 */
+
+/* 섹션1 전체 너비 박스 */
+#chinaMarginCalculator .cn-full-section {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* 제품 및 배송비: CNY | → | USD환산 | 배송비 | 부가세 (5열) */
+.cn-product-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr 1fr 1fr;
+    align-items: end;
+    gap: 16px;
+    margin-top: 12px;
+}
+
+/* SVG 화살표 — input 하단 기준으로 수직 정렬 */
+.cn-arrow-between {
+    display: flex;
+    align-items: center;
+    padding-bottom: 10px; /* input padding 보정 */
+    color: #6b7280;
+}
+
+/* 읽기 전용 input 공통 스타일 */
+.cn-readonly-input {
+    background-color: #f3f4f6 !important;
+    cursor: not-allowed !important;
+    color: #6b7280;
+}
+
+/* 하단 2열 그리드 (가격 조건 + 마진 계산 결과) */
+.cn-bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+/* cn-bottom-grid 내 섹션은 자체 margin 제거 */
+.cn-bottom-grid > .section {
+    margin-bottom: 0;
+}
+
+/* 반응형: 좁은 화면에서 단일 열 */
+@media (max-width: 1100px) {
+    .cn-product-grid {
+        grid-template-columns: 1fr auto 1fr;
+    }
+    /* 배송비·부가세를 다음 행으로 */
+    .cn-product-grid > .form-group:nth-child(4),
+    .cn-product-grid > .form-group:nth-child(5) {
+        grid-column: span 1;
+    }
+}
+
+@media (max-width: 700px) {
+    .cn-product-grid {
+        grid-template-columns: 1fr;
+    }
+    .cn-arrow-between {
+        display: none;
+    }
+
+    .cn-bottom-grid {
+        grid-template-columns: 1fr;
+    }
+}
