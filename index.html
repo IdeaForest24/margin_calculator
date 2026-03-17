@@ -8,6 +8,7 @@
     <!-- CSS 파일 연결 -->
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/margin-calculator.css">
+    <link rel="stylesheet" href="css/china-margin-calculator.css">
     <link rel="stylesheet" href="css/sales-price-adjustment.css">
     <link rel="stylesheet" href="css/egs-rates.css">
 </head>
@@ -21,7 +22,8 @@
 
         <!-- 탭 네비게이션 -->
         <div class="tabs">
-            <button class="tab-link active" onclick="openTab(event, 'marginCalculator')">마진 계산기</button>
+            <button class="tab-link active" onclick="openTab(event, 'marginCalculator')">마진 계산기(한국)</button>
+            <button class="tab-link" onclick="openTab(event, 'chinaMarginCalculator')">마진 계산기(중국)</button>
             <button class="tab-link" onclick="openTab(event, 'salesPriceAdjustment')">판매가 보정</button>
             <button class="tab-link" onclick="openTab(event, 'egsRates')">eGS 운임표</button>
         </div>
@@ -32,15 +34,21 @@
         <div id="marginCalculator" class="tab-content active">
              <div class="top-bar">
                 <div class="exchange-rate-info">
-                    <div>
-                        <span id="exchangeRateStatus" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: #d1d5db; margin-right: 6px; vertical-align: middle;"></span>
-                        <span>실시간 환율: </span>
-                        <span class="rate" id="exchangeRateDisplay">1 USD = 로딩중...</span>
-                        <span id="lastUpdated" class="text-gray"></span>
+                    <div class="rate-display-wrap">
+                        <div class="rate-main-line">
+                            <span id="exchangeRateStatus" class="rate-status-dot"></span>
+                            <span class="rate-label">실시간 환율</span>
+                            <span id="exchangeRateDisplay" class="rate-value">1 USD = 로딩중...</span>
+                            <span class="rate-divider">|</span>
+                            <span id="cnyRateDisplay" class="rate-value">1 CNY = 로딩중...</span>
+                            <button class="rate-refresh-btn" onclick="fetchExchangeRate(true)">
+                                <span id="refreshIcon">🔄</span>
+                            </button>
+                        </div>
+                        <div class="rate-sub-line">
+                            <span id="lastUpdated" class="rate-sub-text"></span>
+                        </div>
                     </div>
-                    <button class="refresh-btn" onclick="fetchExchangeRate(true)">
-                        <span id="refreshIcon">🔄</span> 갱신
-                    </button>
                 </div>
                 
                 <div class="data-management-section">
@@ -177,6 +185,126 @@
                     </div>
 
                     <button class="calculate-btn" onclick="calculateMargin()">🧮 마진 계산하기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================== -->
+        <!--     마진 계산기(중국) 탭 콘텐츠    -->
+        <!-- ================================== -->
+        <div id="chinaMarginCalculator" class="tab-content">
+            <div class="input-section-wrapper">
+                <div class="input-section">
+
+                    <!-- 섹션1: 제품 및 배송비 -->
+                    <div class="section blue cn-full-section">
+                        <div class="section-header blue">📦 제품 및 배송비</div>
+                        <div class="cn-product-grid">
+                            <div class="form-group">
+                                <label for="cn_productCostCny">제품 원가 (CNY)</label>
+                                <input type="number" step="0.01" id="cn_productCostCny" placeholder="예: 35.00">
+                            </div>
+                            <div class="cn-arrow-between">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                     stroke="#6b7280" stroke-width="2" stroke-linecap="round"
+                                     stroke-linejoin="round">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </div>
+                            <div class="form-group">
+                                <label>USD 환산</label>
+                                <input type="text" id="cn_productCostUsdDisplay" class="cn-readonly-input" readonly placeholder="$0.00">
+                            </div>
+                            <div class="form-group">
+                                <label for="cn_shippingCost">배송비 (USD)</label>
+                                <input type="number" step="0.01" id="cn_shippingCost" placeholder="예: 2.00">
+                            </div>
+                            <div class="form-group">
+                                <label for="cn_shippingVat">배송비 부가세 (USD)</label>
+                                <input type="number" step="0.01" id="cn_shippingVat" class="cn-readonly-input" readonly placeholder="배송비의 10% 자동 계산">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 섹션2+3: 가격 조건 + 마진 계산 결과 (2열 그리드) -->
+                    <div class="cn-bottom-grid">
+
+                    <!-- 섹션2: 가격 조건 -->
+                    <div class="section green">
+                        <div class="section-header-row">
+                            <div class="section-header green">🌍 가격 조건</div>
+                            <button class="save-settings-btn compact" onclick="saveChinaCalculatorSettings()">
+                                💾 설정 저장
+                            </button>
+                        </div>
+                        <div class="form-grid-special">
+                            <div class="form-group">
+                                <label for="cn_category">ebay 카테고리 *</label>
+                                <select id="cn_category">
+                                    <option value="">선택</option>
+                                    <option value="most_categories">대부분 카테고리</option>
+                                    <option value="books_movies_music">도서/영화/음악</option>
+                                    <option value="womens_bags">여성용 가방</option>
+                                    <option value="athletic_shoes">운동화</option>
+                                    <option value="jewelry_watches">보석/시계</option>
+                                    <option value="watches_parts">시계/부품</option>
+                                    <option value="coins_paper_money">동전/지폐</option>
+                                    <option value="bullion">금괴/귀금속</option>
+                                    <option value="guitars_basses">악기(기타/베이스)</option>
+                                    <option value="trading_cards">트레이딩 카드</option>
+                                    <option value="nft_categories">NFT</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-grid" style="margin-top: 16px;">
+                            <div class="form-group">
+                                <label for="cn_storeType">ebay 스토어 구독</label>
+                                <select id="cn_storeType">
+                                    <option value="none">없음/Starter</option>
+                                    <option value="basic">Basic 이상</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="cn_isKoreanSeller">판매자 위치</label>
+                                <select id="cn_isKoreanSeller">
+                                    <option value="true">한국 (VAT 10%)</option>
+                                    <option value="false">해외</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-grid" style="margin-top: 16px;">
+                            <div class="form-group">
+                                <label for="cn_targetMargin">목표 마진율 (%)</label>
+                                <input type="number" step="1" id="cn_targetMargin" placeholder="예: 20">
+                            </div>
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                    <input type="checkbox" id="cn_adEnabled" onchange="toggleChinaAdInput()" style="width: auto; margin: 0;">
+                                    <span>광고</span>
+                                </label>
+                                <input type="number" step="0.1" id="cn_adRate" placeholder="예: 5" disabled>
+                                <div class="help-text">광고비율 (판매가의 %)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 섹션3: 마진 계산 결과 -->
+                    <div class="section" id="cn_result-ui-container">
+                        <div class="section-header result-header-with-buttons">
+                            <span>📊 마진 계산 결과</span>
+                            <div id="cn_result-header-buttons" class="result-header-buttons"></div>
+                        </div>
+                        <div id="cn_result-ui-content" class="result-content-style result-placeholder-style">
+                            <div class="no-data-message">
+                                <p style="margin: 0;">마진 계산하기 버튼을 눌러주세요.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    </div><!-- /cn-bottom-grid -->
+
+                    <button class="calculate-btn" onclick="calculateChinaMargin()">🧮 마진 계산하기</button>
                 </div>
             </div>
         </div>
@@ -416,6 +544,7 @@
     <script src="js/egs-utils.js"></script>
 	<script src="js/main.js"></script>
 	<script src="js/margin-calculator.js"></script>
+    <script src="js/china-margin-calculator.js"></script>
     <script src="js/sales-price-adjustment.js"></script>
 	<script src="js/egs-rates.js"></script>
 </body>
