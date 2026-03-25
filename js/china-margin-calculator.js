@@ -52,6 +52,8 @@ function calculateChinaMargin() {
 
     const productCostCnyVal = parseFloat(productCostCny);
     const productCostUSD = (productCostCnyVal * currentCnyRate) / currentExchangeRate;
+    const giftCostCny = parseFloat(document.getElementById('cn_giftCost').value) || 0;
+    const giftCostUSD = (giftCostCny * currentCnyRate) / currentExchangeRate;
     const shippingCost = parseFloat(document.getElementById('cn_shippingCost').value) || 0;
     const shippingVat = parseFloat(document.getElementById('cn_shippingVat').value) || 0;
     const storeType = document.getElementById('cn_storeType').value;
@@ -61,7 +63,7 @@ function calculateChinaMargin() {
     const targetMarginRate = parseFloat(targetMargin);
     const hasStore = storeType !== 'none';
 
-    const totalCostUSD = productCostUSD + shippingCost + shippingVat;
+    const totalCostUSD = productCostUSD + giftCostUSD + shippingCost + shippingVat;
 
     // findTargetSellingPrice, calculateebayFee는 margin-calculator.js에서 재사용
     const requiredSellingPriceUSD = findTargetSellingPrice(
@@ -92,6 +94,8 @@ function calculateChinaMargin() {
     const results = {
         productCostCny: productCostCnyVal,
         productCostUSD,
+        giftCostCny,
+        giftCostUSD,
         shippingCostUSD: shippingCost,
         shippingVatUSD: shippingVat,
         totalCostUSD,
@@ -286,6 +290,12 @@ function openChinaResultModal(results) {
                         <span>제품 원가</span>
                         <span class="value-number red">¥${results.productCostCny.toFixed(2)} (≈ $${results.productCostUSD.toFixed(2)})</span>
                     </div>
+                    ${results.giftCostCny > 0 ? `
+                    <div class="flow-value small">
+                        <span>사은품</span>
+                        <span class="value-number red">¥${results.giftCostCny.toFixed(2)} (≈ $${results.giftCostUSD.toFixed(2)})</span>
+                    </div>
+                    ` : ''}
                     <div class="flow-value small">
                         <span>배송비</span>
                         <span class="value-number red">-$${results.shippingCostUSD.toFixed(2)}</span>

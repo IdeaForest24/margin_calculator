@@ -192,6 +192,7 @@ function calculateMargin() {
 
     const supplierShipping = parseFloat(document.getElementById('supplierShipping').value) || 0;
     const packagingCost = parseFloat(document.getElementById('packagingCost').value) || 0;
+    const giftCost = parseFloat(document.getElementById('giftCost').value) || 0;
     const egsShipping = parseFloat(document.getElementById('egsShipping').value) || 3400;
     const storeType = document.getElementById('storeType').value;
     const isKoreanSeller = document.getElementById('isKoreanSeller').value === 'true';
@@ -228,7 +229,7 @@ function calculateMargin() {
         }
     }
 
-    const totalCostKRW = parseFloat(productCost) + supplierShipping + packagingCost + egsShipping + egsShippingCost + emsSurcharge;
+    const totalCostKRW = parseFloat(productCost) + supplierShipping + packagingCost + giftCost + egsShipping + egsShippingCost + emsSurcharge;
     const totalCostUSD = totalCostKRW / currentExchangeRate;
     const hasStore = storeType !== 'none';
     const targetMarginRate = parseFloat(targetMargin);
@@ -271,6 +272,7 @@ function calculateMargin() {
         productCost: parseFloat(productCost),
         supplierShipping,
         packagingCost,
+        giftCost,
         egsShipping,
         egsInternationalShipping: egsShippingCost,
         emsSurcharge,
