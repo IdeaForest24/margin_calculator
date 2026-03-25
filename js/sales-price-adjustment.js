@@ -423,6 +423,12 @@ function createDetailedFlow(results) {
                         <span>포장비</span>
                         <span class="value-number red">-${Math.round(results.packagingCost).toLocaleString()}원</span>
                     </div>
+                    ${results.giftCost > 0 ? `
+                    <div class="flow-value small">
+                        <span>사은품</span>
+                        <span class="value-number red">-${Math.round(results.giftCost).toLocaleString()}원</span>
+                    </div>
+                    ` : ''}
                     <div class="flow-value small">
                         <span>eGS 입고비</span>
                         <span class="value-number red">-${Math.round(results.egsShipping).toLocaleString()}원</span>
@@ -632,6 +638,7 @@ function recalculateMargin(originalData, newShippingCost, newDestination, newSer
         originalData.productCost +
         originalData.supplierShipping +
         originalData.packagingCost +
+        (originalData.giftCost || 0) +
         originalData.egsShipping +
         newShippingCost +
         newEmsSurcharge;
