@@ -688,7 +688,7 @@ function recalculateMargin(originalData, newShippingCost, newDestination, newSer
     const finalReceiveKRW = finalReceiveUSD * currentExchangeRate;
     const newTotalCostKRW = baseCostKRW;
     const netProfitKRW = finalReceiveKRW - newTotalCostKRW;
-    const actualMarginRate = requiredSellingPriceUSD > 0 ? (netProfitKRW / (requiredSellingPriceUSD * currentExchangeRate)) * 100 : 0;
+    const actualMarginRate = requiredSellingPriceBeforeAdjustmentUSD > 0 ? (netProfitKRW / (requiredSellingPriceBeforeAdjustmentUSD * currentExchangeRate)) * 100 : 0;
 
     // 결과 객체 반환
     return {
